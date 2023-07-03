@@ -697,7 +697,7 @@ class BaseEditorController extends ActionController {
 	public function Summary($pa_options=null) {
 		AssetLoadManager::register('tableList');
 		list($vn_subject_id, $t_subject) = $this->_initView($pa_options);
-		$vb_ajax_load_displays = $t_subject->getAppConfig()->get('enable_ajax_summary_displays') && $this->viewExists('summary_html_ajax.php');
+		$vb_ajax_load_displays = $t_subject->getAppConfig()->get('enable_ajax_summary_displays');
 		session_write_close();
 		$this->SummaryData($pa_options, $vb_ajax_load_displays);
 
@@ -713,12 +713,8 @@ class BaseEditorController extends ActionController {
 			]
 		);
 
-		if ($vb_ajax_load_displays) {
-			$this->render('summary_html_ajax.php');
-		}
-		else {
-			$this->render('summary_html.php');
-		}
+		$this->view->setVar('ajax_display', $vb_ajax_load_displays);
+		$this->render('summary_html.php');
 	}
 	# -------------------------------------------------------
 	/**

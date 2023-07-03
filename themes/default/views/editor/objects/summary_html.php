@@ -31,6 +31,7 @@
 	$t_display 				= $this->getVar('t_display');
 	$placements 			= $this->getVar("placements");
 	$reps 					= $t_item->getRepresentations(array("thumbnail", "small", "medium"));
+	$ajax_display           = $this->getVar('ajax_display');
 ?>
     <div id="summary" style="clear: both;">
 <?php
@@ -73,6 +74,16 @@
 		</tr>
 		<tr>			
 			<td valign="top" align="left" style="padding-right:10px;">
+				<?php if ($ajax_display): ?>
+					<div id="summary-html-data-page">
+						<div class="_error"></div>
+						<div class="_indicator">
+							<img src='<?php print $this->request->getUrlPathForThemeFile('/graphics/icons/indicator.gif'); ?>'/>
+							Loading...
+						</div>
+						<div class="content_wrapper"></div>
+					</div>
+				<?php else: ?>
 <?php
 		foreach($placements as $placement_id => $info) {
 			$class="";
@@ -87,6 +98,7 @@
 			print "<div class=\"unit{$class}\"><span class=\"heading{$class}\">".caTruncateStringWithEllipsis($info['display'], 26)."</span><span class='summaryData'> {$display_value}</span></div>\n";
 		}
 ?>
+<?php endif; ?>
 			</td>
 		</tr>
 	</table>
@@ -94,3 +106,66 @@
 <?php
 TooltipManager::add('#printButton', _t("Download Summary as PDF"));
 TooltipManager::add('a.downloadMediaContainer', _t("Download Media"));
+?>
+
+<?php if ($ajax_display): ?>
+	<?php $data_url = $this->request->getControllerUrl() . '/SummaryData'; ?>
+	<?php $display_url = $this->request->getControllerUrl() . '/SummaryDisplay'; ?>
+
+	<script type="text/javascript">
+		$(document).ready(function () {
+			<?php // Show/hide the loading spinner div. ?>
+			$(document).ajaxStart(() => {
+				$('#summary-html-data-page ._error').empty();
+				$('#summary-html-data-page ._indicator').show();
+			});
+			$(document).ajaxStop(() => $('#summary-html-data-page ._indicator').hide());
+
+			loadDisplay();
+		});
+
+		$("#caSummaryDisplaySelectorForm").submit(function(e){
+			e.preventDefault();
+			loadDisplay();
+			return false;
+		});
+
+		<?php // Load the display 'template' of sorts. ?>
+		function loadDisplay() {
+			$.ajax({
+				type: 'POST',
+				url: '<?php print $display_url; ?>',
+				data: $('#caSummaryDisplaySelectorForm').serialize(),
+				error: (jqXHR, textStatus, errorThrown) => {
+					$('#summary-html-data-page ._error').html('Error: ' + textStatus);
+				},
+				success: (data) => {
+					$('#summary-html-data-page .content_wrapper').empty();
+					$('#summary-html-data-page .content_wrapper').html(data);
+
+					loadData();
+				},
+			});
+		}
+
+		<?php // Load the actual data for the display 'template'. ?>
+		function loadData() {
+			$('#summary-html-data-page ._content').each(
+				function() {
+					let id = $(this).attr('placementId');
+					$.ajax({
+						url: '<?php print $data_url; ?>',
+						data: $('#caSummaryDisplaySelectorForm').serialize() + '&va_placement_id=' + id,
+						error: (jqXHR, textStatus, errorThrown) => {
+							$('#summary-html-data-page ._error').html('Error: ' + textStatus);
+						},
+						success: (data) => {
+							$('#summary-html-data-page ._content[placementid="' + id + '"]').html(data);
+						},
+					});
+				}
+			);
+		}
+
+	</script>
+<?php endif; ?>
