@@ -34,7 +34,7 @@
 ?>
     <div id="summary" style="clear: both;">
 <?php
-    print caEditorPrintSummaryControls($this, TRUE);
+    print caEditorPrintSummaryControls($this);
     print caEditorFieldList($this->request, $t_item, [], []);
 ?>
 	<div id="title">
@@ -103,6 +103,12 @@ TooltipManager::add('a.downloadMediaContainer', _t("Download Media"));
         $(document).ajaxStop(() => $('#summary-html-data-page ._indicator').hide());
 
         loadDisplay();
+    });
+
+    $("#caSummaryDisplaySelectorForm").submit(function(e){
+	    e.preventDefault();
+	    loadDisplay();
+	    return false;
     });
 
     <?php // Load the display 'template' of sorts. ?>
