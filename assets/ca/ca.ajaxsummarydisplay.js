@@ -40,7 +40,6 @@ var caUI = caUI || {};
         // --------------------------------------------------------------------------------
         // Load the display 'template' of sorts. ?>
         that.loadDisplay = function() {
-            console.log(that.controllerUrl + '/SummaryDisplay');
             $.ajax({
                 type: 'POST',
                 url: that.controllerUrl + '/SummaryDisplay',
