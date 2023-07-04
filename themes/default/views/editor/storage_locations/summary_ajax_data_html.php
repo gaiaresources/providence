@@ -1,6 +1,6 @@
 <?php
 /* ----------------------------------------------------------------------
- * views/editor/objects/summary_ajax_data_html.php :
+ * views/editor/storage_locations/summary_ajax_data_html.php :
  * ----------------------------------------------------------------------
  * CollectiveAccess
  * Open-source collections management software

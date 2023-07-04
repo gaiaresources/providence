@@ -1,13 +1,13 @@
 <?php
 /* ----------------------------------------------------------------------
- * views/editor/objects/summary_html_ajax_placements.php :
+ * views/editor/objects/summary_ajax_display_html.php :
  * ----------------------------------------------------------------------
  * CollectiveAccess
  * Open-source collections management software
  * ----------------------------------------------------------------------
  *
  * Software by Whirl-i-Gig (http://www.whirl-i-gig.com)
- * Copyright 2010-2021 Whirl-i-Gig
+ * Copyright 2010-2023 Whirl-i-Gig
  *
  * For more information visit http://www.CollectiveAccess.org
  *
