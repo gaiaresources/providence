@@ -727,7 +727,7 @@ class BaseEditorController extends ActionController {
 		AssetLoadManager::register('tableList');
 		list($vn_subject_id, $t_subject) = $this->_initView($pa_options);
 		$this->SummaryData($pa_options, $pb_ajax_load_displays);
-		$this->render('summary_html_ajax_placements.php');
+		$this->render('summary_ajax_display_html.php');
 	}
 	# -------------------------------------------------------
 	/**
@@ -823,7 +823,7 @@ class BaseEditorController extends ActionController {
 			}
 
 			if ($pb_ajax_load_displays || isset($ajax_placement_id)) {
-				$this->render('summary_display_html.php');
+				$this->render('summary_ajax_data_html.php');
 			}
 		}
 	}
