@@ -109,63 +109,10 @@ TooltipManager::add('a.downloadMediaContainer', _t("Download Media"));
 ?>
 
 <?php if ($ajax_display): ?>
-	<?php $data_url = $this->request->getControllerUrl() . '/SummaryData'; ?>
-	<?php $display_url = $this->request->getControllerUrl() . '/SummaryDisplay'; ?>
-
+	<?php AssetLoadManager::register("ajaxSummaryDisplay"); ?>
 	<script type="text/javascript">
-		$(document).ready(function () {
-			<?php // Show/hide the loading spinner div. ?>
-			$(document).ajaxStart(() => {
-				$('#summary-html-data-page ._error').empty();
-				$('#summary-html-data-page ._indicator').show();
-			});
-			$(document).ajaxStop(() => $('#summary-html-data-page ._indicator').hide());
-
-			loadDisplay();
+		var caAjaxSummaryDisplay = caUI.initAjaxSummaryDisplay({
+			controllerUrl: '<?php print $this->request->getControllerUrl();?>',
 		});
-
-		$("#caSummaryDisplaySelectorForm").submit(function(e){
-			e.preventDefault();
-			loadDisplay();
-			return false;
-		});
-
-		<?php // Load the display 'template' of sorts. ?>
-		function loadDisplay() {
-			$.ajax({
-				type: 'POST',
-				url: '<?php print $display_url; ?>',
-				data: $('#caSummaryDisplaySelectorForm').serialize(),
-				error: (jqXHR, textStatus, errorThrown) => {
-					$('#summary-html-data-page ._error').html('Error: ' + textStatus);
-				},
-				success: (data) => {
-					$('#summary-html-data-page .content_wrapper').empty();
-					$('#summary-html-data-page .content_wrapper').html(data);
-
-					loadData();
-				},
-			});
-		}
-
-		<?php // Load the actual data for the display 'template'. ?>
-		function loadData() {
-			$('#summary-html-data-page ._content').each(
-				function() {
-					let id = $(this).attr('placementId');
-					$.ajax({
-						url: '<?php print $data_url; ?>',
-						data: $('#caSummaryDisplaySelectorForm').serialize() + '&va_placement_id=' + id,
-						error: (jqXHR, textStatus, errorThrown) => {
-							$('#summary-html-data-page ._error').html('Error: ' + textStatus);
-						},
-						success: (data) => {
-							$('#summary-html-data-page ._content[placementid="' + id + '"]').html(data);
-						},
-					});
-				}
-			);
-		}
-
 	</script>
 <?php endif; ?>
