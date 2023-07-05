@@ -697,6 +697,9 @@ class BaseEditorController extends ActionController {
 	public function Summary($pa_options=null) {
 		AssetLoadManager::register('tableList');
 		list($vn_subject_id, $t_subject) = $this->_initView($pa_options);
+		
+		if (!$this->_checkAccess($t_subject)) { throw new ApplicationException(_t('Access denied')); }
+		
 		$vb_ajax_load_displays = $t_subject->getAppConfig()->get('enable_ajax_summary_displays');
 		session_write_close();
 		$this->SummaryInfo($pa_options, !$vb_ajax_load_displays);
