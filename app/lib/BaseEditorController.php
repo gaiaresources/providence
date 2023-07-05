@@ -727,7 +727,14 @@ class BaseEditorController extends ActionController {
 		AssetLoadManager::register('tableList');
 		list($vn_subject_id, $t_subject) = $this->_initView($pa_options);
 		$this->SummaryData($pa_options, $pb_ajax_load_displays);
-		$this->render('summary_html_ajax_placements.php');
+		$this->renderGeneric('summary_ajax_display_html.php');
+	}
+	
+	public function renderGeneric($ps_view) {
+		$oldViewsPaths = $this->getViewPaths();
+		$this->setViewPath('generic');
+		$this->render($ps_view);
+		$this->setViewPath($oldViewsPaths);
 	}
 	# -------------------------------------------------------
 	/**
@@ -746,7 +753,7 @@ class BaseEditorController extends ActionController {
 
 		if (!$this->request->isAjax()) {
 			if((defined('__CA_ENABLE_DEBUG_OUTPUT__') && __CA_ENABLE_DEBUG_OUTPUT__) || (bool)$this->request->config->get('display_template_debugger') || ($this->request->user->getPreference('show_template_debugger') !== 'hide')) {
-				$this->render('../template_test_html.php');
+				$this->renderGeneric('template_test_html.php');
 			}
 		}
 
@@ -823,7 +830,7 @@ class BaseEditorController extends ActionController {
 			}
 
 			if ($pb_ajax_load_displays || isset($ajax_placement_id)) {
-				$this->render('summary_display_html.php');
+				$this->renderGeneric('summary_ajax_data_html.php');
 			}
 		}
 	}
