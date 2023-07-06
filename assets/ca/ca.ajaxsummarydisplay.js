@@ -62,7 +62,7 @@ var caUI = caUI || {};
                     let id = $(this).attr('placementId');
                     $.ajax({
                         url: that.controllerUrl + '/summaryData',
-                        data: $('#caSummaryDisplaySelectorForm').serialize() + '&va_placement_id=' + id,
+                        data: $('#caSummaryDisplaySelectorForm').serialize() + '&placement_id=' + id,
                         error: (jqXHR, textStatus, errorThrown) => {
                             $('#summary-html-data-page ._error').html('Error: ' + textStatus);
                         },
