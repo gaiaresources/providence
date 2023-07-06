@@ -760,7 +760,7 @@ class BaseEditorController extends ActionController {
 	public function SummaryData($pa_options=null) {
 		$this->SummaryInfo($pa_options, TRUE);
 
-		$ajax_placement_id = $this->getRequest()->getParam('placement_id');
+		$ajax_placement_id = $this->getRequest()->getParameter('placement_id', pInteger);
 		if (isset($ajax_placement_id)) {
 			$this->view->setVar('ajax_item', $ajax_placement_id);
 		}
