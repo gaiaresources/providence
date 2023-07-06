@@ -692,14 +692,34 @@ class BaseEditorController extends ActionController {
 	 * Render Summary
 	 *
 	 * @param array $pa_options Array of options passed through to _initView
-	 * @return bool
+	 *
+	 * @throws ApplicationException
 	 */
 	public function Summary($pa_options=null) {
 		AssetLoadManager::register('tableList');
 		list($vn_subject_id, $t_subject) = $this->_initView($pa_options);
+		
+		if (!$this->_checkAccess($t_subject)) { throw new ApplicationException(_t('Access denied')); }
+		
 		$vb_ajax_load_displays = $t_subject->getAppConfig()->get('enable_ajax_summary_displays');
 		session_write_close();
-		$this->SummaryData($pa_options, $vb_ajax_load_displays);
+		$this->SummaryInfo($pa_options, !$vb_ajax_load_displays);
+
+		if((defined('__CA_ENABLE_DEBUG_OUTPUT__') && __CA_ENABLE_DEBUG_OUTPUT__) || (bool)$this->request->config->get('display_template_debugger') || ($this->request->user->getPreference('show_template_debugger') !== 'hide')) {
+			$this->renderGeneric('template_test_html.php');
+		}
+
+		// save where we are in session, for "Save and return" button
+		$va_save_and_return = Session::getVar('save_and_return_locations');
+		if(!is_array($va_save_and_return)) { $va_save_and_return = array(); }
+
+		$va_save = array(
+			'table' => $t_subject->tableName(),
+			'key' => $vn_subject_id,
+			'url_path' => $this->getRequest()->getFullUrlPath()
+		);
+
+		Session::setVar('save_and_return_locations', caPushToStack($va_save, $va_save_and_return, __CA_SAVE_AND_RETURN_STACK_SIZE__));
 
 		$this->view->setVar($t_subject->tableName().'_summary_last_settings', Session::getVar($t_subject->tableName().'_summary_last_settings'));
 
@@ -721,15 +741,37 @@ class BaseEditorController extends ActionController {
 	 * Generates display for summary of record data
 	 *
 	 * @param array $pa_options Array of options passed through to _initView
-	 * @return bool
+	 *
+	 * @throws ApplicationException
 	 */
-	public function SummaryDisplay($pa_options=null, $pb_ajax_load_displays=FALSE) {
-		AssetLoadManager::register('tableList');
-		list($vn_subject_id, $t_subject) = $this->_initView($pa_options);
-		$this->SummaryData($pa_options, $pb_ajax_load_displays);
+	public function SummaryDisplay($pa_options=null) {
+		$this->SummaryInfo($pa_options, TRUE);
 		$this->renderGeneric('summary_ajax_display_html.php');
 	}
-	
+	# -------------------------------------------------------
+
+	/**
+	 * Generates summary of record data based upon a bundle display for screen (HTML)
+	 *
+	 * @param array $pa_options Array of options passed through to _initView
+	 *
+	 * @throws ApplicationException
+	 */
+	public function SummaryData($pa_options=null) {
+		$this->SummaryInfo($pa_options, TRUE);
+
+		$ajax_placement_id = $this->getRequest()->getParam('placement_id');
+		if (isset($ajax_placement_id)) {
+			$this->view->setVar('ajax_item', $ajax_placement_id);
+		}
+		$this->renderGeneric('summary_ajax_data_html.php');
+	}
+	# -------------------------------------------------------
+	/**
+	 * Render a "generic" template.
+	 *
+	 * @param string $ps_view path to view file
+	 */
 	public function renderGeneric($ps_view) {
 		$oldViewsPaths = $this->getViewPaths();
 		$this->setViewPath('generic');
@@ -741,22 +783,16 @@ class BaseEditorController extends ActionController {
 	 * Generates summary of record data based upon a bundle display for screen (HTML)
 	 *
 	 * @param array $pa_options Array of options passed through to _initView
-	 * @param bool $pb_ajax_load_displays Load display using AJAX?
-	 * @return bool
+	 * @param bool $pb_load_placement_info Load placement information
+	 *
+	 * @throws ApplicationException
 	 */
-	public function SummaryData($pa_options=null, $pb_ajax_load_displays=FALSE) {
+	public function SummaryInfo($pa_options=null, $pb_load_placement_info=TRUE) {
 		ini_set('display_errors', 0);
-		AssetLoadManager::register('tableList');
 		list($vn_subject_id, $t_subject) = $this->_initView($pa_options);
 
 		if (!$this->_checkAccess($t_subject)) { throw new ApplicationException(_t('Access denied')); }
-
-		if (!$this->request->isAjax()) {
-			if((defined('__CA_ENABLE_DEBUG_OUTPUT__') && __CA_ENABLE_DEBUG_OUTPUT__) || (bool)$this->request->config->get('display_template_debugger') || ($this->request->user->getPreference('show_template_debugger') !== 'hide')) {
-				$this->renderGeneric('template_test_html.php');
-			}
-		}
-
+		
 		$t_display = new ca_bundle_displays();
 		$va_displays = caExtractValuesByUserLocale($t_display->getBundleDisplays(array('table' => $t_subject->tableNum(), 'user_id' => $this->request->getUserID(), 'access' => __CA_BUNDLE_DISPLAY_READ_ACCESS__, 'restrictToTypes' => array($t_subject->getTypeID()))));
 
@@ -768,22 +804,10 @@ class BaseEditorController extends ActionController {
 		    $vn_display_id = sizeof($va_tmp) > 0 ? array_shift(array_keys($va_tmp)) : 0;
 		}
 
-		// save where we are in session, for "Save and return" button
-		$va_save_and_return = Session::getVar('save_and_return_locations');
-		if(!is_array($va_save_and_return)) { $va_save_and_return = array(); }
-
-		$va_save = array(
-			'table' => $t_subject->tableName(),
-			'key' => $vn_subject_id,
-			'url_path' => $this->getRequest()->getFullUrlPath()
-		);
-
-		Session::setVar('save_and_return_locations', caPushToStack($va_save, $va_save_and_return, __CA_SAVE_AND_RETURN_STACK_SIZE__));
-
 		$this->view->setVar('bundle_displays', $va_displays);
 		$this->view->setVar('t_display', $t_display);
 
-		if (!$pb_ajax_load_displays || $this->request->isAjax()) {
+		if ($pb_load_placement_info) {
 			if ($this->request->isAjax()) {
 				session_write_close();
 			}
@@ -822,15 +846,6 @@ class BaseEditorController extends ActionController {
 
 				$this->view->setVar('display_id', 0);
 				$this->view->setVar('placements', $va_display_list['displayList']);
-			}
-
-			$ajax_placement_id = $_GET['va_placement_id'];
-			if (isset($ajax_placement_id)) {
-				$this->view->setVar('ajax_item', $_GET['va_placement_id']);
-			}
-
-			if ($pb_ajax_load_displays || isset($ajax_placement_id)) {
-				$this->renderGeneric('summary_ajax_data_html.php');
 			}
 		}
 	}
