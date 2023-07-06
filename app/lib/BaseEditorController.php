@@ -692,7 +692,8 @@ class BaseEditorController extends ActionController {
 	 * Render Summary
 	 *
 	 * @param array $pa_options Array of options passed through to _initView
-	 * @return bool
+	 *
+	 * @throws ApplicationException
 	 */
 	public function Summary($pa_options=null) {
 		AssetLoadManager::register('tableList');
@@ -740,26 +741,21 @@ class BaseEditorController extends ActionController {
 	 * Generates display for summary of record data
 	 *
 	 * @param array $pa_options Array of options passed through to _initView
-	 * @return bool
+	 *
+	 * @throws ApplicationException
 	 */
 	public function SummaryDisplay($pa_options=null) {
 		$this->SummaryInfo($pa_options, TRUE);
 		$this->renderGeneric('summary_ajax_display_html.php');
 	}
-	
-	public function renderGeneric($ps_view) {
-		$oldViewsPaths = $this->getViewPaths();
-		$this->setViewPath('generic');
-		$this->render($ps_view);
-		$this->setViewPath($oldViewsPaths);
-	}
 	# -------------------------------------------------------
+
 	/**
 	 * Generates summary of record data based upon a bundle display for screen (HTML)
 	 *
 	 * @param array $pa_options Array of options passed through to _initView
-	 * @param bool $pb_ajax_load_displays Load display using AJAX?
-	 * @return bool
+	 *
+	 * @throws ApplicationException
 	 */
 	public function SummaryData($pa_options=null) {
 		$this->SummaryInfo($pa_options, TRUE);
@@ -772,11 +768,24 @@ class BaseEditorController extends ActionController {
 	}
 	# -------------------------------------------------------
 	/**
+	 * Render a "generic" template.
+	 *
+	 * @param string $ps_view path to view file
+	 */
+	public function renderGeneric($ps_view) {
+		$oldViewsPaths = $this->getViewPaths();
+		$this->setViewPath('generic');
+		$this->render($ps_view);
+		$this->setViewPath($oldViewsPaths);
+	}
+	# -------------------------------------------------------
+	/**
 	 * Generates summary of record data based upon a bundle display for screen (HTML)
 	 *
 	 * @param array $pa_options Array of options passed through to _initView
-	 * @param bool $pb_ajax_load_displays Load display using AJAX?
-	 * @return bool
+	 * @param bool $pb_load_placement_info Load placement information
+	 *
+	 * @throws ApplicationException
 	 */
 	public function SummaryInfo($pa_options=null, $pb_load_placement_info=TRUE) {
 		ini_set('display_errors', 0);
