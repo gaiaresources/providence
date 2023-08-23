@@ -261,67 +261,89 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 	 */
 	private function _processQueryBoolean(int $subject_tablenum, $query) {
 		$signs = $query->getSigns();
-	 	$subqueries = $query->getSubqueries();
-	 	
-	 	$subject_table = Datamodel::getTableName($subject_tablenum);
-	 	$pk = Datamodel::primaryKey($subject_tablenum);
-	 	
-	 	$acc = [];
-	 	$i = -1;
-	 	foreach($subqueries as $subquery) {
-	 		$hits = $this->_processQuery($subject_tablenum, $subquery);
-	 		if(is_null($hits)) { continue; } // skip stop words
-	 		$i++;
-	 		$op = $this->_getBooleanOperator($signs, $i);
-	 		
-	 		switch($op) {
-	 			case 'AND':
-	 				if ($i == 0) { $acc = $hits; break; }
-	 				
-	 				$acc = array_intersect_key($acc, $hits);
-	 				foreach($acc as $row_id => $boost) {
-	 					$acc[$row_id] += $hits[$row_id];	// add boost
-	 				}
-	 				break;
-	 			case 'OR':
-	 				if ($i == 0) { $acc = $hits; break; }
-	 				$acc = array_replace($hits, $acc);
-	 				foreach($acc as $row_id => $boost) {
-	 					$acc[$row_id] += $hits[$row_id];	// add boost
-	 				}
-	 				break;
-	 			case 'NOT':
-	 				if ($i == 0) {
-	 					// TODO: Try to optimize this case by moving it from first position when possible?
-	 					// 		 Without anything to diff this with we have to invert the result set, which can potentially 
-	 					//		 return a very large result set
-	 					$deleted_sql = Datamodel::getFieldNum($subject_tablenum, 'deleted') ? 'deleted = 0 AND ' : '';
-	 					if (!sizeof($hits)) { $acc = []; break; }
-	 					$qr_res = $this->db->query("
+		$subqueries = $query->getSubqueries();
+		$subject_table = Datamodel::getTableName($subject_tablenum);
+		$pk = Datamodel::primaryKey($subject_tablenum);
+		$acc = [];
+		$i = -1;
+
+		if (sizeof($subqueries) > 2 ){
+			foreach ($subqueries as $subquery){
+				if(get_class($subquery) !=='Zend_Search_Lucene_Search_Query_Term' ){
+					$this->_processQueryTerm( $subject_tablenum, $subqueries );
+				}
+			}
+			$multiterm = true;
+			$hits = $this->_processQueryTerm( $subject_tablenum, $subqueries, $multiterm );
+			$acc = $hits;
+		}
+		else {
+			foreach ( $subqueries as $subquery ) {
+				$hits = $this->_processQuery( $subject_tablenum, $subquery );
+				if ( is_null( $hits ) ) {
+					continue;
+				} // skip stop words
+				$i ++;
+				$op = $this->_getBooleanOperator( $signs, $i );
+				switch ( $op ) {
+					case 'AND':
+						if ( $i == 0 ) {
+							$acc = $hits;
+							break;
+						}
+
+						$acc = array_intersect_key( $acc, $hits );
+						foreach ( $acc as $row_id => $boost ) {
+							$acc[ $row_id ] += $hits[ $row_id ];    // add boost
+						}
+						break;
+					case 'OR':
+						if ( $i == 0 ) {
+							$acc = $hits;
+							break;
+						}
+						$acc = array_replace( $hits, $acc );
+						foreach ( $acc as $row_id => $boost ) {
+							$acc[ $row_id ] += $hits[ $row_id ];    // add boost
+						}
+						break;
+					case 'NOT':
+						if ( $i == 0 ) {
+							// TODO: Try to optimize this case by moving it from first position when possible?
+							// 		 Without anything to diff this with we have to invert the result set, which can potentially
+							//		 return a very large result set
+							$deleted_sql = Datamodel::getFieldNum( $subject_tablenum, 'deleted' ) ? 'deleted = 0 AND '
+								: '';
+							if ( ! sizeof( $hits ) ) {
+								$acc = [];
+								break;
+							}
+							$qr_res = $this->db->query( "
 	 						SELECT {$pk} 
 	 						FROM {$subject_table} 
 	 						WHERE {$deleted_sql} {$pk} NOT IN (?)
-	 					", [array_keys($hits)]);
-	 					$vals = $qr_res->getAllFieldValues($pk);
-	 					
-	 					$acc = [];
-	 					foreach($vals as $row_id) {
-	 						// assume constant boost = 1 here
-	 						$acc[$row_id] = 1;
-	 					}
-	 				} else {
-	 					$acc = array_diff_key($acc, $hits);	
-	 					foreach($acc as $row_id => $boost) {
-							$acc[$row_id] += $hits[$row_id];	// add boost
+	 					", [ array_keys( $hits ) ] );
+							$vals   = $qr_res->getAllFieldValues( $pk );
+
+							$acc = [];
+							foreach ( $vals as $row_id ) {
+								// assume constant boost = 1 here
+								$acc[ $row_id ] = 1;
+							}
+						} else {
+							$acc = array_diff_key( $acc, $hits );
+							foreach ( $acc as $row_id => $boost ) {
+								$acc[ $row_id ] += $hits[ $row_id ];    // add boost
+							}
 						}
-	 				}
-	 				break;
-	 			default:
-	 				throw new ApplicationException(_t('Invalid boolean operator: %1', $op));
-	 				break;	
-	 		}
-	 		
-	 	}
+						break;
+					default:
+						throw new ApplicationException( _t( 'Invalid boolean operator: %1', $op ) );
+						break;
+				}
+
+			}
+		}
 	 	return $acc;
 	}
 	# -------------------------------------------------------
@@ -374,44 +396,57 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 	/**
 	 *
 	 */
-	private function _processQueryTerm(int $subject_tablenum, $query) {
-		$qclass = get_class($query);
-		$term = ($qclass === 'Zend_Search_Lucene_Search_Query_Term') ? $query->getTerm() : $query;
-		
-	 	$field = $term->field;
-	 	$field_lc = mb_strtolower($field);
-	 	$field_elements = explode('.', $field_lc);
-	 	if (in_array($field_elements[0], [_t('created'), _t('modified')])) {
-	 		return $this->_processQueryChangeLog($subject_tablenum, $term);
-	 	}
-	 	$ap = $field ? $this->_getElementIDForAccessPoint($subject_tablenum, $field) : null;
-	 	$words = [$term->text];
-	 	if($field && !is_array($ap)) {
-	 		$words[0] = $field.':'.$words[0];
-	 		$field = null;
-	 	}
-	 	$indexing_options = caGetOption('indexing_options', $ap, null);
-	 	
-	 	$blank_val = caGetBlankLabelText($subject_tablenum);
-	 	$is_blank = ((mb_strtolower("[{$blank_val}]") === mb_strtolower($term->text)) || (mb_strtolower("[BLANK]") === mb_strtolower($term->text)));
-	 	$is_not_blank = (mb_strtolower("["._t('SET')."]") === mb_strtolower($term->text));
-	 	
-	 	if(!$is_blank && !$is_not_blank && (!is_array($indexing_options) || !in_array('DONT_TOKENIZE', $indexing_options) || in_array('INDEX_AS_IDNO', $indexing_options))) {
-	 		$words = self::filterStopWords(self::tokenize(join(' ', $words), true));
-	 	}
-	 	if(!$words || !sizeof($words)) { return null; }
-	 	
-	 	
-	 	$word_field = 'sw.word';
-	 	
-	 	if (is_array($ap) && !$this->useSearchIndexForAP($ap)) {
-	 		// Handle datatype-specific queries
-	 		$ret = $this->_processMetadataDataType($subject_tablenum, $ap, $query);
-	 		if(is_array($ret)) { return $ret; }
-	 	}
-	 	
-	 	$results = [];
-	 	foreach($words as $i => $text) {
+	private function _processQueryTerm(int $subject_tablenum, $query, $multiterm=false) {
+		if($multiterm){
+			$words = [];
+			foreach ($query as $subquery){
+				$term = $subquery->getTerm();
+				$words[] = $term->text;
+			}
+
+			if(!$words || !sizeof($words)) { return null; }
+
+			$word_field = 'sw.word';
+		} else {
+
+			$qclass = get_class($query);
+			$term = ($qclass === 'Zend_Search_Lucene_Search_Query_Term') ? $query->getTerm() : $query;
+
+
+			$field = $term->field;
+			$field_lc = mb_strtolower($field);
+			$field_elements = explode('.', $field_lc);
+			if (in_array($field_elements[0], [_t('created'), _t('modified')])) {
+				return $this->_processQueryChangeLog($subject_tablenum, $term);
+			}
+			$ap = $field ? $this->_getElementIDForAccessPoint($subject_tablenum, $field) : null;
+			$words = [$term->text];
+
+			if($field && !is_array($ap)) {
+				$words[0] = $field.':'.$words[0];
+				$field = null;
+			}
+			$indexing_options = caGetOption('indexing_options', $ap, null);
+
+			$blank_val = caGetBlankLabelText($subject_tablenum);
+			$is_blank = ((mb_strtolower("[{$blank_val}]") === mb_strtolower($term->text)) || (mb_strtolower("[BLANK]") === mb_strtolower($term->text)));
+			$is_not_blank = (mb_strtolower("["._t('SET')."]") === mb_strtolower($term->text));
+			if(!$is_blank && !$is_not_blank && (!is_array($indexing_options) || !in_array('DONT_TOKENIZE', $indexing_options) || in_array('INDEX_AS_IDNO', $indexing_options))) {
+				$words = self::filterStopWords(self::tokenize(join(' ', $words), true));
+			}
+			if(!$words || !sizeof($words)) { return null; }
+
+			$word_field = 'sw.word';
+
+			if (is_array($ap) && !$this->useSearchIndexForAP($ap)) {
+				// Handle datatype-specific queries
+				$ret = $this->_processMetadataDataType($subject_tablenum, $ap, $query);
+				if(is_array($ret)) { return $ret; }
+			}
+		}
+
+		$results = [];
+		foreach($words as $i => $text) {
 			// Don't stem if:
 			//	1. Stemming is disabled
 			//	2. Search for is blank values
@@ -432,8 +467,12 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 				$text .= '*';
 			}
 			$this->searched_terms[] = $text;
-			
-			$params = [$subject_tablenum];
+
+			if ($multiterm)
+			{ $params[0] = $subject_tablenum;
+			} else {
+				$params = [$subject_tablenum];
+			}
 			$word_op = '=';
 		
 			$use_boost = true;
@@ -455,7 +494,9 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 				$text = str_replace('?', '_', $text);
 				$params[] = $text;
 				$use_boost = false;
-			} else{
+			} elseif ($multiterm){
+				$params[$i+1] = $text;
+			} else {
 				$params[] = $text;
 			}
 			
@@ -498,19 +539,43 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 					$field_sql .= " AND (".join(' OR ', $res).")";
 				}
 			}
-		
-			$private_sql = ($this->getOption('omitPrivateIndexing') ? ' AND swi.access = 0' : '');
-		
-			if ($is_bare_wildcard) {
-				$t = Datamodel::getInstance($subject_tablenum, true);
-				$pk = $t->primaryKey();
-				$table = $t->tableName();
-			
-				$qr_res = $this->db->query("
+
+		}
+		$private_sql = ($this->getOption('omitPrivateIndexing') ? ' AND swi.access = 0' : '');
+
+		if($multiterm){
+
+			$table_num = array_shift($params);
+			$comparison_sql =  "AND swi.row_id IN";
+			$subquery_sql = "";
+			$subquery_sql_template = "{$comparison_sql} (SELECT swi.row_id FROM ca_sql_search_word_index swi 
+						INNER JOIN ca_sql_search_words AS sw ON sw.word_id = swi.word_id 
+						WHERE swi.table_num = {$table_num} AND {$word_field} {$word_op} ?)";
+
+			foreach ($params as $param) {
+				$subquery_sql.=$subquery_sql_template;
+
+			}
+			$qr_res = $this->db->query("
+					SELECT swi.row_id, SUM(swi.boost) boost
+					FROM ca_sql_search_word_index swi
+					".(!$is_blank ? 'INNER JOIN ca_sql_search_words AS sw ON sw.word_id = swi.word_id' : '')."
+					WHERE
+						swi.table_num = {$table_num} {$subquery_sql}
+						{$field_sql}
+						{$private_sql}
+					GROUP BY swi.row_id
+				", $params);
+		}elseif ($is_bare_wildcard) {
+			$t = Datamodel::getInstance($subject_tablenum, true);
+			$pk = $t->primaryKey();
+			$table = $t->tableName();
+
+			$qr_res = $this->db->query("
 					SELECT {$pk} row_id, 100 boost
 					FROM {$table}".($t->hasField('deleted') ? " WHERE deleted = 0" : "")."
 				", []);
-			} elseif($use_boost) {
+		} elseif($use_boost) {
 				$qr_res = $this->db->query("
 					SELECT swi.row_id, SUM(swi.boost) boost
 					FROM ca_sql_search_word_index swi
@@ -521,7 +586,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 						{$private_sql}
 					GROUP BY swi.row_id
 				", $params);
-			} else {
+		} else {
 				$qr_res = $this->db->query("
 					SELECT DISTINCT swi.row_id, 100 boost
 					FROM ca_sql_search_word_index swi
@@ -531,14 +596,20 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 						{$field_sql}
 						{$private_sql}
 				", $params);
-			}
+		}
+
+		if($multiterm){
+			$ret = $this->_arrayFromDbResult($qr_res);
+
+		} else {
 			$results[$i] = $this->_arrayFromDbResult($qr_res);
+			$ret = array_shift($results);
+			foreach($results as $r) {
+				if(!is_array($r)) { continue; }
+				$ret = array_intersect_key($ret, $r);
+			}
 		}
-		$ret = array_shift($results);
-		foreach($results as $r) {
-			if(!is_array($r)) { continue; }
-			$ret = array_intersect_key($ret, $r);
-		}
+
 		return $ret;
 	}
 	# -------------------------------------------------------
