@@ -274,7 +274,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 			foreach ($subqueries as $subquery){
 				// We need the terms to be able to do the multiterm search in the process Query method.
 				// Check if we have the term already (basic search) or if it's nested (Advanced search)
-				if(get_class($subquery) !=='Zend_Search_Lucene_Search_Query_Term' || get_class($subquery) !=='Zend_Search_Lucene_Search_Query_Phrase' ){
+				if($subquery instanceof Zend_Search_Lucene_Search_Query_Boolean ){
 					$nested_subqueries = $subquery->getSubqueries();
 
 					foreach ($nested_subqueries as $term_query){
