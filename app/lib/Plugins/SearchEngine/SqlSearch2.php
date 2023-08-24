@@ -267,14 +267,26 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 		$acc = [];
 		$i = -1;
 
-		if (sizeof($subqueries) > 2 ){
+		$term_subqueries = [];
+		if (sizeof($subqueries) > 1 ){
+			$multiterm = true;
+
 			foreach ($subqueries as $subquery){
-				if(get_class($subquery) !=='Zend_Search_Lucene_Search_Query_Term' ){
-					$this->_processQueryTerm( $subject_tablenum, $subqueries );
+				// We need the terms to be able to do the multiterm search in the process Query method.
+				// Check if we have the term already (basic search) or if it's nested (Advanced search)
+				if(get_class($subquery) !=='Zend_Search_Lucene_Search_Query_Term' || get_class($subquery) !=='Zend_Search_Lucene_Search_Query_Phrase' ){
+					$nested_subqueries = $subquery->getSubqueries();
+
+					foreach ($nested_subqueries as $term_query){
+
+						$term_subqueries[]= $term_query;
+					}
+				} else {
+					$term_subqueries[]= $subquery;
 				}
 			}
-			$multiterm = true;
-			$hits = $this->_processQueryTerm( $subject_tablenum, $subqueries, $multiterm );
+
+			$hits = $this->_processQueryTerm( $subject_tablenum, $term_subqueries, $multiterm );
 			$acc = $hits;
 		}
 		else {
@@ -399,11 +411,39 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 	private function _processQueryTerm(int $subject_tablenum, $query, $multiterm=false) {
 		if($multiterm){
 			$words = [];
-			foreach ($query as $subquery){
-				$term = $subquery->getTerm();
-				$words[] = $term->text;
-			}
+			$multiterm_with_fields =  false;
+			$field_details = [];
+			$field_num_word = [];
 
+			foreach ($query as $subquery){
+				$subquery_class = get_class($subquery);
+
+				if ($subquery_class === 'Zend_Search_Lucene_Search_Query_Term' ){
+					// basic search + bool fields in advance search
+					$term = $subquery->getTerm();
+					$words[] = $term->text;
+				} else {
+					// advance search text search
+					$multiterm_with_fields = true;
+					$fields = [];
+					$terms = $subquery->getTerms();
+
+					foreach ($terms as $subterm){
+						if($subterm->field){
+
+							// This bit needs work
+							$field = $subterm->field;
+							$field_ap = $this->_getElementIDForAccessPoint($subject_tablenum, $field);
+							$field_details[]= $field ? $field_ap : null;
+							$ret = $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery);
+							$words[] = $subterm->text;
+
+							$fields[]= $field;
+						};
+					}
+				}
+
+			}
 			if(!$words || !sizeof($words)) { return null; }
 
 			$word_field = 'sw.word';
@@ -503,7 +543,11 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 	 		if($is_blank || $is_not_blank) { $use_boost = false; }
 	 
 			$field_sql = null;
-			if (is_array($ap)) {
+			if($multiterm && $multiterm_with_fields){
+
+				//$field_sql = " AND swi.field_table_num = ? AND swi.field_num = ?";
+
+			}else if (is_array($ap)) {
 				$field_sql = " AND swi.field_table_num = ? AND swi.field_num = ?";
 				$params[] = $ap['table_num'];
 				$params[] = $ap['field_num'];
@@ -541,8 +585,8 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 			}
 
 		}
-		$private_sql = ($this->getOption('omitPrivateIndexing') ? ' AND swi.access = 0' : '');
 
+		$private_sql = ($this->getOption('omitPrivateIndexing') ? ' AND swi.access = 0' : '');
 		if($multiterm){
 
 			$table_num = array_shift($params);
@@ -566,6 +610,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 						{$private_sql}
 					GROUP BY swi.row_id
 				", $params);
+
 		}elseif ($is_bare_wildcard) {
 			$t = Datamodel::getInstance($subject_tablenum, true);
 			$pk = $t->primaryKey();
@@ -602,6 +647,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 			$ret = $this->_arrayFromDbResult($qr_res);
 
 		} else {
+
 			$results[$i] = $this->_arrayFromDbResult($qr_res);
 			$ret = array_shift($results);
 			foreach($results as $r) {
@@ -893,7 +939,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 	 */
 	private function _processMetadataDataType(int $subject_tablenum, array $ap, $query) { 
 		$qclass = get_class($query);
-		
+
 		$text = $text_upper = null;
 		switch($qclass) {
 			case 'Zend_Search_Lucene_Search_Query_Term':
@@ -968,6 +1014,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 				$qinfo = $this->_queryForGeocodeAttribute(new GeocodeAttributeValue(), $ap, $text, $text_upper);
 				break;
 		}
+
 		if(is_array($qinfo) && sizeof($qinfo)) {
 			$params = $qinfo['params'];
 			if($ap['type'] !== 'INTRINSIC') { array_unshift($params, $ap['table_num']); }
@@ -977,7 +1024,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 			if ((int)$ap['table_num'] === (int)$subject_tablenum) {
 				return $row_ids;
 			}
-			
+
 			$s = Datamodel::getInstance($subject_tablenum, true);
 			$spk = $s->primaryKey(true);
 			
@@ -1018,7 +1065,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 				foreach($a as $i) {
 					$subject_ids[$i] = 1;
 				}
-			}	
+			}
 			
 			return $subject_ids;
 		}
