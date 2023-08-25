@@ -412,6 +412,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 		if($multiterm){
 			$words = [];
 			$multiterm_with_fields =  false;
+			$date_ret = [];
 			$field_details = [];
 			$field_num_word = [];
 
@@ -421,24 +422,33 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 				if ($subquery_class === 'Zend_Search_Lucene_Search_Query_Term' ){
 					// basic search + bool fields in advance search
 					$term = $subquery->getTerm();
-					$words[] = $term->text;
+
+					if ($term->field === "modified" || $term->field === "created"){
+						if (sizeof($date_ret) >= 1){
+							$date_ret = array_intersect($date_ret, $this->_processQueryChangeLog($subject_tablenum, $term));
+						} else {
+
+							$date_ret = $this->_processQueryChangeLog($subject_tablenum, $term);
+						}
+					} else {
+
+						$words[] = $term->text;
+					}
 				} else {
 					// advance search text search
-					$multiterm_with_fields = true;
 					$fields = [];
 					$terms = $subquery->getTerms();
 
 					foreach ($terms as $subterm){
 						if($subterm->field){
-
-							// This bit needs work
 							$field = $subterm->field;
 							$field_ap = $this->_getElementIDForAccessPoint($subject_tablenum, $field);
-							$field_details[]= $field ? $field_ap : null;
-							$ret = $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery);
-							$words[] = $subterm->text;
+							if(sizeof($field_ret) >= 1){
+								$field_ret = array_intersect($field_ret, $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery));
+							} else {
+								$field_ret = $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery);
+							}
 
-							$fields[]= $field;
 						};
 					}
 				}
@@ -586,6 +596,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 
 		}
 
+
 		$private_sql = ($this->getOption('omitPrivateIndexing') ? ' AND swi.access = 0' : '');
 		if($multiterm){
 
@@ -643,9 +654,16 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 				", $params);
 		}
 
-		if($multiterm){
-			$ret = $this->_arrayFromDbResult($qr_res);
+		if($multiterm && is_array($field_ret)){
+			$results[$i] = $this->_arrayFromDbResult($qr_res);
 
+			foreach($results as $r) {
+				if(!is_array($r)) { continue; }
+				$ret = array_intersect_key($field_ret, $r);
+			}
+
+		} else if ($multiterm) {
+			$ret = $this->_arrayFromDbResult($qr_res);
 		} else {
 
 			$results[$i] = $this->_arrayFromDbResult($qr_res);
