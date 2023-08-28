@@ -410,53 +410,55 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 	 */
 	private function _processQueryTerm(int $subject_tablenum, $query, $multiterm=false) {
 		if($multiterm){
+			$date_only_search = false;
 			$words = [];
-			$multiterm_with_fields =  false;
 			$date_ret = [];
-			$field_details = [];
-			$field_num_word = [];
 
 			foreach ($query as $subquery){
 				$subquery_class = get_class($subquery);
-
 				if ($subquery_class === 'Zend_Search_Lucene_Search_Query_Term' ){
-					// basic search + bool fields in advance search
+					// basic search + bool and date fields in advance search
 					$term = $subquery->getTerm();
+					$field = $term->field;
 
-					if ($term->field === "modified" || $term->field === "created"){
+					if ($field === "modified" || $field === "created"){
+						// modified and created date fields
 						if (sizeof($date_ret) >= 1){
 							$date_ret = array_intersect($date_ret, $this->_processQueryChangeLog($subject_tablenum, $term));
 						} else {
 
 							$date_ret = $this->_processQueryChangeLog($subject_tablenum, $term);
 						}
+
+					} else if (strpos($field, "date") !== false) {
+						// all other date fields
+						$field_ap = $this->_getElementIDForAccessPoint($subject_tablenum, $field);
+						if(sizeof($field_ret) >= 1){
+							$field_ret = array_intersect($field_ret, $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery));
+						} else {
+							$field_ret[]= $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery);
+						}
+
 					} else {
 
 						$words[] = $term->text;
 					}
 				} else {
-					// advance search text search
-					$fields = [];
-					$terms = $subquery->getTerms();
+					// advance search phrase text search
 
-					foreach ($terms as $subterm){
-						if($subterm->field){
-							$field = $subterm->field;
-							$field_ap = $this->_getElementIDForAccessPoint($subject_tablenum, $field);
-							if(sizeof($field_ret) >= 1){
-								$field_ret = array_intersect($field_ret, $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery));
-							} else {
-								$field_ret = $this->_processMetadataDataType($subject_tablenum, $field_ap , $subquery);
-							}
-
-						};
+					if(sizeof($field_ret) >= 1){
+						$field_ret = array_intersect($field_ret, $this->_processQueryPhrase($subject_tablenum, $subquery));
+					} else {
+						$field_ret = $this->_processQueryPhrase($subject_tablenum, $subquery);
 					}
 				}
 
 			}
-			if(!$words || !sizeof($words)) { return null; }
-
-			$word_field = 'sw.word';
+			if(!$words || !sizeof($words)) { 
+				$date_only_search = true; 
+			} else {
+				$word_field = 'sw.word';
+			}
 		} else {
 
 			$qclass = get_class($query);
@@ -487,11 +489,11 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 			if(!$words || !sizeof($words)) { return null; }
 
 			$word_field = 'sw.word';
-
 			if (is_array($ap) && !$this->useSearchIndexForAP($ap)) {
 				// Handle datatype-specific queries
 				$ret = $this->_processMetadataDataType($subject_tablenum, $ap, $query);
 				if(is_array($ret)) { return $ret; }
+
 			}
 		}
 
@@ -553,11 +555,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 	 		if($is_blank || $is_not_blank) { $use_boost = false; }
 	 
 			$field_sql = null;
-			if($multiterm && $multiterm_with_fields){
-
-				//$field_sql = " AND swi.field_table_num = ? AND swi.field_num = ?";
-
-			}else if (is_array($ap)) {
+			 if (is_array($ap)) {
 				$field_sql = " AND swi.field_table_num = ? AND swi.field_num = ?";
 				$params[] = $ap['table_num'];
 				$params[] = $ap['field_num'];
@@ -599,19 +597,19 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 
 		$private_sql = ($this->getOption('omitPrivateIndexing') ? ' AND swi.access = 0' : '');
 		if($multiterm){
-
-			$table_num = array_shift($params);
-			$comparison_sql =  "AND swi.row_id IN";
-			$subquery_sql = "";
-			$subquery_sql_template = "{$comparison_sql} (SELECT swi.row_id FROM ca_sql_search_word_index swi 
+			if(!$date_only_search) {
+				$table_num = array_shift($params);
+				$comparison_sql =  "AND swi.row_id IN";
+				$subquery_sql = "";
+				$subquery_sql_template = "{$comparison_sql} (SELECT swi.row_id FROM ca_sql_search_word_index swi 
 						INNER JOIN ca_sql_search_words AS sw ON sw.word_id = swi.word_id 
 						WHERE swi.table_num = {$table_num} AND {$word_field} {$word_op} ?)";
 
-			foreach ($params as $param) {
-				$subquery_sql.=$subquery_sql_template;
+				foreach ($params as $param) {
+					$subquery_sql.=$subquery_sql_template;
 
-			}
-			$qr_res = $this->db->query("
+				}
+				$qr_res = $this->db->query("
 					SELECT swi.row_id, SUM(swi.boost) boost
 					FROM ca_sql_search_word_index swi
 					".(!$is_blank ? 'INNER JOIN ca_sql_search_words AS sw ON sw.word_id = swi.word_id' : '')."
@@ -621,6 +619,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 						{$private_sql}
 					GROUP BY swi.row_id
 				", $params);
+			}
 
 		}elseif ($is_bare_wildcard) {
 			$t = Datamodel::getInstance($subject_tablenum, true);
@@ -653,19 +652,21 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 						{$private_sql}
 				", $params);
 		}
-
 		if($multiterm && is_array($field_ret)){
-			$results[$i] = $this->_arrayFromDbResult($qr_res);
+			if($date_only_search){
+				$ret = $field_ret;
+			} else {
+				$results[$i] = $this->_arrayFromDbResult($qr_res);
 
-			foreach($results as $r) {
-				if(!is_array($r)) { continue; }
-				$ret = array_intersect_key($field_ret, $r);
+				foreach($results as $r) {
+					if(!is_array($r)) { continue; }
+					$ret = array_intersect_key($field_ret, $r);
+				}
 			}
 
 		} else if ($multiterm) {
 			$ret = $this->_arrayFromDbResult($qr_res);
 		} else {
-
 			$results[$i] = $this->_arrayFromDbResult($qr_res);
 			$ret = array_shift($results);
 			foreach($results as $r) {
@@ -981,7 +982,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 				throw new ApplicationException(_t('Invalid query passed to _processMetadataDataType: %1', $qclass));
 				break;
 		}
-		
+
 		// is field intrinsic? (dates, integer, numerics can be intrinsic)
 		if($ap['type'] === 'INTRINSIC') {
 			$field = explode('.', $ap['access_point']);
@@ -991,7 +992,7 @@ class WLPlugSearchEngineSqlSearch2 extends BaseSearchPlugin implements IWLPlugSe
 			if (!($t_instance = Datamodel::getInstance($table, true))) { return []; }
 			if(!$t_instance->hasField($field_name)) { return []; }
 			$fi = $t_instance->getFieldInfo($field_name);
-			
+
 			switch($fi['FIELD_TYPE']) {
 				case FT_NUMBER:
 					$ap['element_info']['datatype'] = isset($fi['LIST_CODE']) ? null : __CA_ATTRIBUTE_VALUE_NUMERIC__;
