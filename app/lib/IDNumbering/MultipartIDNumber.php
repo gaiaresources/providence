@@ -156,11 +156,16 @@ class MultipartIDNumber extends IDNumber {
 	protected function explodeValue($value) {
 		$separator = $this->getSeparator();
 		
-		if ($separator && $this->formatHas('PARENT', 0)) {
+		if ($this->formatHas('PARENT', 0)) {
 			// starts with PARENT element so explode in reverse since parent value may include separators
 			$v_proc = preg_replace("!^".preg_quote($this->getParentValue(), '!')."!", "_PARENT_", $value);
-		
-			$element_vals = explode($separator, $v_proc);
+
+			if ($separator) {
+				$element_vals = explode( $separator, $v_proc );
+			}
+			else {
+				$element_vals = [$v_proc];
+			}
 
 			$i = 0;
 			foreach ($this->getElements() as $element_info) {
