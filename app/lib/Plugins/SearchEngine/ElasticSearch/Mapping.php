@@ -258,7 +258,6 @@ class Mapping {
 				//@see https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-geo-shape-type.html
 				$va_element_config[$ps_table.'/'.$vs_element_code] = array(
 					'type' => 'geo_shape',
-					'precision' => '3m'
 				);
 				// index text content as is -- sometimes useful for full text place search
 				$va_element_config[$ps_table.'/'.$vs_element_code.'_text'] = array('type' => ($this->version == 2) ? 'string' : 'text');
