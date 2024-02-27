@@ -237,7 +237,6 @@ class WLPlugSearchEngineElasticSearch extends BaseSearchPlugin implements IWLPlu
 		if(!self::$client) {
 			self::$client = \Elastic\Elasticsearch\ClientBuilder::create()
 				->setHosts(defined('__CA_ELASTICSEARCH_HOSTS__') ? __CA_ELASTICSEARCH_HOSTS__ : [$this->elasticsearch_base_url])
-				->setBasicAuthentication('elastic', __CA_ELASTICSEARCH_PASSWORD__)
 				->setRetries(3)
 				->build();
 		}
