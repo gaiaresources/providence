@@ -363,14 +363,6 @@ class Mapping {
 		}
 
 		switch ( $instance->getFieldInfo( $field_name, 'FIELD_TYPE' ) ) {
-			case ( FT_TEXT ):
-			case ( FT_MEDIA ):
-			case ( FT_FILE ):
-			case ( FT_PASSWORD ):
-			case ( FT_VARS ):
-				$field_options[ $table . '/' . $field_name ]['type'] = 'text';
-				unset( $field_options[ $table . '/' . $field_name ]['index'] );
-				break;
 			case ( FT_NUMBER ):
 			case ( FT_TIME ):
 			case ( FT_TIMERANGE ):
@@ -402,6 +394,11 @@ class Mapping {
 				$field_options[ $table . '/' . $field_name ]['type'] = 'integer';
 				unset( $field_options[ $table . '/' . $field_name ]['index'] );
 				break;
+			case ( FT_TEXT ):
+			case ( FT_MEDIA ):
+			case ( FT_FILE ):
+			case ( FT_PASSWORD ):
+			case ( FT_VARS ):
 			default:
 				$field_options[ $table . '/' . $field_name ]['type'] = 'text';
 				unset( $field_options[ $table . '/' . $field_name ]['index'] );
