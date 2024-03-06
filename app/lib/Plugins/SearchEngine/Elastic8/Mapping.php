@@ -353,12 +353,7 @@ class Mapping {
 			$table . '/' . $field_name => []
 		];
 
-		if ( in_array( 'DONT_TOKENIZE', $indexing_config ) ) {
-			$field_options[ $table . '/' . $field_name ]['index'] = 'not_analyzed';
-		}
-
 		if ( in_array( 'INDEX_AS_IDNO', $indexing_config ) ) {
-			unset( $field_options[ $table . '/' . $field_name ]['index'] );
 			$field_options[ $table . '/' . $field_name ]['analyzer'] = 'keyword_lowercase';
 		}
 
@@ -375,7 +370,6 @@ class Mapping {
 					$field_options[ $table . '/' . $field_name ]['type'] = 'double';
 					unset( $field_options[ $table . '/' . $field_name ]['analyzer'] );
 				}
-				unset( $field_options[ $table . '/' . $field_name ]['index'] );
 				break;
 			case ( FT_TIMESTAMP ):
 			case ( FT_DATETIME ):
@@ -388,11 +382,9 @@ class Mapping {
 				$field_options[ $table . '/' . $field_name ]['format'] = 'date_time_no_millis';
 				$field_options[ $table . '/' . $field_name ]['ignore_malformed'] = true;
 				unset( $field_options[ $table . '/' . $field_name ]['analyzer'] );
-				unset( $field_options[ $table . '/' . $field_name ]['index'] );
 				break;
 			case ( FT_BIT ):
 				$field_options[ $table . '/' . $field_name ]['type'] = 'integer';
-				unset( $field_options[ $table . '/' . $field_name ]['index'] );
 				break;
 			case ( FT_TEXT ):
 			case ( FT_MEDIA ):
@@ -401,7 +393,6 @@ class Mapping {
 			case ( FT_VARS ):
 			default:
 				$field_options[ $table . '/' . $field_name ]['type'] = 'text';
-				unset( $field_options[ $table . '/' . $field_name ]['index'] );
 				break;
 		}
 
