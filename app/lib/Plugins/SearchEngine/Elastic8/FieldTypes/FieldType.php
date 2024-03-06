@@ -34,6 +34,7 @@ namespace Elastic8\FieldTypes;
 
 use ca_metadata_elements;
 use Datamodel;
+use MemoryCacheInvalidParameterException;
 use Zend_Search_Lucene_Index_Term;
 
 abstract class FieldType {
@@ -49,7 +50,7 @@ abstract class FieldType {
 	 *
 	 * @return bool
 	 */
-	public function getAdditionalTerms( $term ) {
+	public function getAdditionalTerms( Zend_Search_Lucene_Index_Term $term ): bool {
 		return false;
 	}
 
@@ -60,7 +61,7 @@ abstract class FieldType {
 	 *
 	 * @return bool
 	 */
-	public function getQueryFilters( $term ) {
+	public function getQueryFilters( Zend_Search_Lucene_Index_Term $term ): bool {
 		return false;
 	}
 
@@ -69,8 +70,9 @@ abstract class FieldType {
 	 * @param string $content_fieldname
 	 *
 	 * @return FieldType
+	 * @throws MemoryCacheInvalidParameterException
 	 */
-	public static function getInstance( $table, $content_fieldname ) {
+	public static function getInstance( string $table, string $content_fieldname ) {
 		require_once( __CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/DateRange.php' );
 		require_once( __CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Geocode.php' );
 		require_once( __CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Currency.php' );

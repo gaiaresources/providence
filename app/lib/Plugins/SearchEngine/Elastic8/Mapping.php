@@ -42,39 +42,39 @@ class Mapping {
 	/**
 	 * @var Configuration
 	 */
-	protected $search_conf;
+	protected Configuration $search_conf;
 	/**
 	 * @var Configuration
 	 */
-	protected $indexing_conf;
+	protected Configuration $indexing_conf;
 	/**
 	 * @var SearchBase
 	 */
-	protected $search_base;
+	protected SearchBase $search_base;
 
 	/**
 	 * @var Db
 	 */
-	protected $db;
+	protected Db $db;
 
 	/**
 	 * Element info array
 	 *
-	 * @var array
+	 * @var null | array
 	 */
-	protected $element_info;
+	protected ?array $element_info;
 
 	/**
 	 * @var ApplicationVars
 	 */
-	protected $app_vars;
+	protected ApplicationVars $app_vars;
 
 	/**
 	 * Elastic major version number in use
 	 *
 	 * @var int
 	 */
-	protected $version = 8;
+	protected int $version = 8;
 
 	/**
 	 * Mapping constructor.
@@ -99,7 +99,7 @@ class Mapping {
 	 *
 	 * @return bool
 	 */
-	public function needsRefresh() {
+	public function needsRefresh(): bool {
 		return ( time() > $this->app_vars->getVar( 'ElasticSearchMappingRefresh' ) );
 	}
 
@@ -114,21 +114,21 @@ class Mapping {
 	/**
 	 * @return Configuration
 	 */
-	protected function getIndexingConf() {
+	protected function getIndexingConf(): Configuration {
 		return $this->indexing_conf;
 	}
 
 	/**
 	 * @return SearchBase
 	 */
-	protected function getSearchBase() {
+	protected function getSearchBase(): SearchBase {
 		return $this->search_base;
 	}
 
 	/**
 	 * @return Db
 	 */
-	public function getDb() {
+	public function getDb(): Db {
 		return $this->db;
 	}
 
@@ -137,7 +137,7 @@ class Mapping {
 	 *
 	 * @return array
 	 */
-	public function getTables() {
+	public function getTables(): array {
 		return $this->getIndexingConf()->getAssocKeys();
 	}
 
@@ -148,7 +148,7 @@ class Mapping {
 	 *
 	 * @return array
 	 */
-	public function getFieldsToIndex( $table ) {
+	public function getFieldsToIndex( $table ): array {
 		if ( ! Datamodel::tableExists( $table ) ) {
 			return [];
 		}
@@ -226,7 +226,7 @@ class Mapping {
 	 *
 	 * @return array|bool
 	 */
-	public function getElementInfo( $element_id ) {
+	public function getElementInfo( int $element_id ) {
 		if ( isset( $this->element_info[ $element_id ] ) ) {
 			return $this->element_info[ $element_id ];
 		}
@@ -247,7 +247,7 @@ class Mapping {
 	 *
 	 * @return array
 	 */
-	public function getConfigForElement( $table, $element_id, $pa_element_info, $indexing_config ) {
+	public function getConfigForElement( string $table, int $element_id, array $pa_element_info, array $indexing_config ): array {
 		if ( ! is_numeric( $element_id ) && ( intval( $element_id ) > 0 ) ) {
 			return [];
 		}
@@ -342,7 +342,7 @@ class Mapping {
 	 *
 	 * @return array
 	 */
-	public function getConfigForIntrinsic( $table, $field_num, $indexing_config ) {
+	public function getConfigForIntrinsic( string $table, int $field_num, array $indexing_config ): array {
 		$field_name = Datamodel::getFieldName( $table, $field_num );
 		if ( ! $field_name ) {
 			return [];
@@ -405,7 +405,7 @@ class Mapping {
 	 * @see https://www.elastic.co/guide/en/elasticsearch/client/php-api/2.0/_index_management_operations.html#_put_mappings_api
 	 * @return array
 	 */
-	public function get() {
+	public function get(): array {
 		$mapping_config = [];
 
 		foreach ( $this->getTables() as $table ) {

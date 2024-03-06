@@ -44,7 +44,7 @@ class Geocode extends GenericElement {
 		parent::__construct( $table_name, $element_code );
 	}
 
-	public function getIndexingFragment( $content, $options ) {
+	public function getIndexingFragment( $content, $options ): array {
 		if ( is_array( $content ) ) {
 			$content = serialize( $content );
 		}
@@ -94,7 +94,7 @@ class Geocode extends GenericElement {
 	 *
 	 * @return Zend_Search_Lucene_Index_Term
 	 */
-	public function getRewrittenTerm( $term ) {
+	public function getRewrittenTerm( $term ): Zend_Search_Lucene_Index_Term {
 		$tmp = explode( '\\/', $term->field );
 		if ( sizeof( $tmp ) == 3 ) {
 			unset( $tmp[1] );
@@ -117,7 +117,7 @@ class Geocode extends GenericElement {
 		return null;
 	}
 
-	public function getFilterForRangeQuery( $lower_term, $upper_term ) {
+	public function getFilterForRangeQuery( $lower_term, $upper_term ): array {
 		$return = [];
 
 		$lower_coords = explode( ',', $lower_term->text );
@@ -141,7 +141,7 @@ class Geocode extends GenericElement {
 	 *
 	 * @return mixed
 	 */
-	public function getFilterForPhraseQuery( $subquery ) {
+	public function getFilterForPhraseQuery( Zend_Search_Lucene_Search_Query_Phrase $subquery ) {
 		$terms = [];
 		foreach ( $subquery->getQueryTerms() as $term ) {
 			$term = caRewriteElasticSearchTermFieldSpec( $term );

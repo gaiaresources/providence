@@ -45,7 +45,7 @@ class Field {
 	 *
 	 * @var int
 	 */
-	protected $content_tablenum;
+	protected int $content_tablenum;
 	/**
 	 * Content table name
 	 *
@@ -57,7 +57,7 @@ class Field {
 	 *
 	 * @var string
 	 */
-	protected $indexing_fieldname;
+	protected string $indexing_fieldname;
 	/**
 	 * @var FieldTypes\FieldType
 	 */
@@ -71,7 +71,7 @@ class Field {
 	 *
 	 * @throws Exception
 	 */
-	public function __construct( $content_tablenum, $indexing_fieldname ) {
+	public function __construct( int $content_tablenum, string $indexing_fieldname ) {
 		$this->content_tablenum = $content_tablenum;
 		$this->content_tablename = Datamodel::getTableName( $this->getContentTableNum() );
 
@@ -91,7 +91,7 @@ class Field {
 	/**
 	 * @return int
 	 */
-	private function getContentTableNum() {
+	private function getContentTableNum(): int {
 		return $this->content_tablenum;
 	}
 
@@ -108,7 +108,7 @@ class Field {
 	 *
 	 * @return array
 	 */
-	public function getIndexingFragment( $content, $options = [] ) {
+	public function getIndexingFragment( $content, array $options = [] ): array {
 		return $this->field_type->getIndexingFragment( $content, $options );
 	}
 }
