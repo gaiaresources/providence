@@ -178,7 +178,6 @@ class Query {
 				default:
 					throw new Exception( 'Encountered unknown Zend query type in Elastic8\Query: '
 						. get_class( $subquery ) . '. Query was: ' . $search_expression );
-					break;
 			}
 		}
 		$signs = $this->getRewrittenQuery()->getSigns() ?: [];
@@ -376,7 +375,6 @@ class Query {
 			default:
 				throw new Exception( 'Encountered unknown Zend subquery type in Elastic8\Query: '
 					. get_class( $subquery ) );
-				break;
 		}
 	}
 
