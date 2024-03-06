@@ -379,14 +379,11 @@ class Mapping {
 				// image Image 24 -- for a ca_objects type_id image
 				if ( $instance->getFieldInfo( $field_name, 'LIST_CODE' ) ) {
 					$field_options[ $table . '/' . $field_name ]['type'] = 'text';
-					unset( $field_options[ $table . '/' . $field_name ]['index'] );
-					break;
 				} else {
 					$field_options[ $table . '/' . $field_name ]['type'] = 'double';
 					unset( $field_options[ $table . '/' . $field_name ]['analyzer'] );
-					unset( $field_options[ $table . '/' . $field_name ]['index'] );
-					break;
 				}
+				unset( $field_options[ $table . '/' . $field_name ]['index'] );
 				break;
 			case ( FT_TIMESTAMP ):
 			case ( FT_DATETIME ):
