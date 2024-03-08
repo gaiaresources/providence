@@ -31,9 +31,10 @@
  */
 
 /* is ElasticSearch running?  */
+
 define('__CA_ELASTICSEARCH_SETTING_RUNNING__', 5001);
 /* does the index exist? */
-define('__CA_ELASTICSEARCH_SETTING_INDEX_EXISTS__', 5002);
+define('__CA_ELASTICSEARCH_SETTING_INDEXES_EXIST__', 5002);
 require_once(__CA_LIB_DIR__ . '/Datamodel.php');
 require_once(__CA_LIB_DIR__ . '/Configuration.php');
 require_once(__CA_LIB_DIR__ . '/Search/SearchBase.php');
@@ -41,38 +42,16 @@ require_once(__CA_LIB_DIR__ . '/Search/ASearchConfigurationSettings.php');
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8.php');
 
 class Elastic8ConfigurationSettings extends ASearchConfigurationSettings {
-	private Configuration $app_config;
-	private Configuration $search_config;
-	private Configuration $search_indexing_config;
-	private array $setting_names;
-	private array $setting_descriptions;
-	private array $setting_hints;
-	private $elasticsearch_base_url;
-	private $elasticsearch_index_name;
+	private array $setting_names = [];
+	private array $setting_descriptions = [];
+	private array $setting_hints = [];
+
+	private ?WLPlugSearchEngineElastic8 $elastic8 = null;
 
 	public function __construct() {
-		$this->search_base = new SearchBase();
-		$this->app_config = Configuration::load();
-		$this->search_config = Configuration::load($this->app_config->get("search_config"));
-		$this->search_indexing_config = Configuration::load(__CA_CONF_DIR__ . '/search_indexing.conf');
-		$this->setting_descriptions = [];
-		$this->setting_names = [];
-		$this->setting_hints = [];
 		$this->_initMessages();
 
-		// allow overriding settings from search.conf via constant (usually defined in bootstrap file)
-		// this is useful for multi-instance setups which have the same set of config files for multiple instances
-		if (defined('__CA_ELASTICSEARCH_BASE_URL__') && (strlen(__CA_ELASTICSEARCH_BASE_URL__) > 0)) {
-			$this->elasticsearch_base_url = __CA_ELASTICSEARCH_BASE_URL__;
-		} else {
-			$this->elasticsearch_base_url = $this->search_config->get('search_elasticsearch_base_url');
-		}
-
-		if (defined('__CA_ELASTICSEARCH_INDEX_NAME__') && (strlen(__CA_ELASTICSEARCH_INDEX_NAME__) > 0)) {
-			$this->elasticsearch_index_name = __CA_ELASTICSEARCH_INDEX_NAME__;
-		} else {
-			$this->elasticsearch_index_name = $this->search_config->get('search_elasticsearch_index_name');
-		}
+		$this->elastic8 = new WLPlugSearchEngineElastic8();
 
 		parent::__construct();
 	}
@@ -84,31 +63,28 @@ class Elastic8ConfigurationSettings extends ASearchConfigurationSettings {
 	private function _initMessages() {
 		$this->setting_names[__CA_ELASTICSEARCH_SETTING_RUNNING__]
 			= _t("ElasticSearch up and running");
-		$this->setting_names[__CA_ELASTICSEARCH_SETTING_INDEX_EXISTS__]
-			= _t("ElasticSearch index exists");
+		$this->setting_names[__CA_ELASTICSEARCH_SETTING_INDEXES_EXIST__]
+			= _t("ElasticSearch indexes exist");
 		$this->setting_descriptions[__CA_ELASTICSEARCH_SETTING_RUNNING__]
 			= _t("The ElasticSearch service must be running.");
-		$this->setting_descriptions[__CA_ELASTICSEARCH_SETTING_INDEX_EXISTS__]
-			= _t("CollectiveAccess uses only a single index in an ElasticSearch setup. The name of that index can be set in the CollectiveAccess configuration.");
+		$this->setting_descriptions[__CA_ELASTICSEARCH_SETTING_INDEXES_EXIST__]
+			= _t("CollectiveAccess uses multiple indexes in an ElasticSearch setup.");
 		$this->setting_hints[__CA_ELASTICSEARCH_SETTING_RUNNING__]
-			= _t("Install and start the ElasticSearch service. If it is already running, check your CollectiveAccess configuration (the ElasticSearch URL and index name in particular).");
-		$this->setting_hints[__CA_ELASTICSEARCH_SETTING_INDEX_EXISTS__]
-			= _t("If the service is running and can be accessed by CollectiveAccess but the index is missing, let CollectiveAccess generate a fresh index and create the related indexing mappings. There is a tool in support/utils.");
+			= _t("Install and start the ElasticSearch service. If it is already running, check your CollectiveAccess configuration (the ElasticSearch URL in particular).");
+		$this->setting_hints[__CA_ELASTICSEARCH_SETTING_INDEXES_EXIST__]
+			= _t("If the service is running and can be accessed by CollectiveAccess but the indexes are missing, let CollectiveAccess generate a fresh index and create the related indexing mappings. There is a tool in support/utils.");
 	}
 
 	public function setSettings() {
 		$this->opa_possible_errors = array_keys($this->setting_names);
 	}
 
-	/**
-	 * @throws Zend_Http_Client_Exception
-	 */
 	public function checkSetting($pn_setting_num) {
 		switch ($pn_setting_num) {
 			case __CA_ELASTICSEARCH_SETTING_RUNNING__:
 				return $this->_checkElasticSearchRunning();
-			case __CA_ELASTICSEARCH_SETTING_INDEX_EXISTS__:
-				return $this->_checkElasticSearchIndexExists();
+			case __CA_ELASTICSEARCH_SETTING_INDEXES_EXIST__:
+				return $this->_checkElasticSearchIndexesExist();
 			default:
 				return false;
 		}
@@ -126,55 +102,24 @@ class Elastic8ConfigurationSettings extends ASearchConfigurationSettings {
 		return $this->setting_hints[$pn_setting_num];
 	}
 
-	/**
-	 * @throws Zend_Http_Client_Exception
-	 */
 	private function _checkElasticSearchRunning(): int {
-		/* check if elasticsearch alive */
-		$http_client = new Zend_Http_Client();
-		$http_client->setUri(
-			$this->elasticsearch_base_url . "/" . /* general url */
-			$this->elasticsearch_index_name . "/" . /* index name */
-			"/_search"
-		);
-		$http_client->setParameterGet('q', '*');
 		try {
-			$http_response = $http_client->request();
-		} catch (Zend_Http_Client_Exception $e) {
+			$this->elastic8->info();
+			return __CA_SEARCH_CONFIG_OK__;
+		} catch (\Exception $e) {
 			return __CA_SEARCH_CONFIG_ERROR__;
 		}
-
-		/* everything passed */
-
-		return __CA_SEARCH_CONFIG_OK__;
 	}
 
-	/**
-	 * @throws Zend_Http_Client_Exception
-	 */
-	private function _checkElasticSearchIndexExists(): int {
-		/* check if elasticsearch alive */
-		$http_client = new Zend_Http_Client();
-
-		$http_client->setUri(
-			$this->elasticsearch_base_url . "/" . /* general url */
-			$this->elasticsearch_index_name . "/" . /* index name */
-			"/_search"
-		);
-		$http_client->setParameterGet('q', '*');
+	private function _checkElasticSearchIndexesExist(): int {
 		try {
-			$http_response = $http_client->request();
-			$response = json_decode($http_response->getBody(), true);
-
-			if (isset($response["status"]) && $response["status"] == 404) {
-				return __CA_SEARCH_CONFIG_ERROR__;
+			if ($this->elastic8->checkIndexes()) {
+				return __CA_SEARCH_CONFIG_OK__;
 			}
-		} catch (Zend_Http_Client_Exception $e) {
+		} catch (\Exception $e) {
 			return __CA_SEARCH_CONFIG_ERROR__;
 		}
 
-		/* everything passed */
-
-		return __CA_SEARCH_CONFIG_OK__;
+		return __CA_SEARCH_CONFIG_ERROR__;
 	}
 }

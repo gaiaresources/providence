@@ -822,4 +822,28 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			'id' => $subject_row_id
 		])['_source'];
 	}
+
+	/**
+	 * @throws AuthenticationException
+	 * @throws ClientResponseException
+	 * @throws ServerResponseException
+	 */
+	public function info() {
+		return $this->getClient()->info();
+	}
+
+	/**
+	 * @throws AuthenticationException
+	 * @throws ClientResponseException
+	 * @throws ServerResponseException
+	 * @throws MissingParameterException
+	 */
+	public function checkIndexes() {
+		$mapping = new Elastic8\Mapping();
+		$tables = $mapping->getTables();
+
+		return $this->getClient()->indices()->exists([
+			'index' => array_map([$this, 'getIndexName'], $tables),
+		]);
+	}
 }
