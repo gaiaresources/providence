@@ -46,7 +46,7 @@ class Elastic8ConfigurationSettings extends ASearchConfigurationSettings {
 	private array $setting_descriptions = [];
 	private array $setting_hints = [];
 
-	private ?WLPlugSearchEngineElastic8 $elastic8 = null;
+	private WLPlugSearchEngineElastic8 $elastic8;
 
 	public function __construct() {
 		$this->_initMessages();
