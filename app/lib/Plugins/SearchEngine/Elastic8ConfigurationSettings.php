@@ -72,7 +72,7 @@ class Elastic8ConfigurationSettings extends ASearchConfigurationSettings {
 		$this->setting_hints[__CA_ELASTICSEARCH_SETTING_RUNNING__]
 			= _t("Install and start the ElasticSearch service. If it is already running, check your CollectiveAccess configuration (the ElasticSearch URL in particular).");
 		$this->setting_hints[__CA_ELASTICSEARCH_SETTING_INDEXES_EXIST__]
-			= _t("If the service is running and can be accessed by CollectiveAccess but the indexes are missing, let CollectiveAccess generate a fresh index and create the related indexing mappings. There is a tool in support/utils.");
+			= _t("If the service is running and can be accessed by CollectiveAccess but the indexes are missing, let CollectiveAccess generate fresh indexes and create the related indexing mappings. There is a tool in support/bin/caUtils.");
 	}
 
 	public function setSettings() {
