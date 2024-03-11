@@ -221,14 +221,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				$content_row_id);
 		}
 
-		if ((
-				sizeof(self::$doc_content_buffer) +
-				sizeof(self::$update_content_buffer) +
-				sizeof(self::$delete_buffer)
-			) > $this->getOption('maxIndexingBufferSize')
-		) {
-			$this->flushContentBuffer();
-		}
+		$this->flushBufferWhenFull();
 	}
 
 	/**
@@ -502,14 +495,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		unset($this->indexing_subject_row_id);
 		unset($this->indexing_subject_tablename);
 
-		if ((
-				sizeof(self::$doc_content_buffer) +
-				sizeof(self::$update_content_buffer) +
-				sizeof(self::$delete_buffer)
-			) > $this->getOption('maxIndexingBufferSize')
-		) {
-			$this->flushContentBuffer();
-		}
+		$this->flushBufferWhenFull();
 	}
 
 	/**
@@ -797,5 +783,23 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 	public function isReindexing(): bool {
 		return (defined('__CollectiveAccess_IS_REINDEXING__') && __CollectiveAccess_IS_REINDEXING__);
+	}
+
+	/**
+	 * @return void
+	 * @throws ApplicationException
+	 * @throws AuthenticationException
+	 * @throws ClientResponseException
+	 * @throws ServerResponseException
+	 */
+	private function flushBufferWhenFull(): void {
+		if ((
+				sizeof(self::$doc_content_buffer) +
+				sizeof(self::$update_content_buffer) +
+				sizeof(self::$delete_buffer)
+			) > $this->getOption('maxIndexingBufferSize')
+		) {
+			$this->flushContentBuffer();
+		}
 	}
 }
