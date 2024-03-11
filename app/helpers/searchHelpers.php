@@ -2260,9 +2260,9 @@
 	function caTokenizeString(?string $value) : array {
 		$search_engine_class = SearchBase::searchEngineClassName();
 		
-		if(method_exists('SearchBase', $search_engine_class)) {
+		if(method_exists($search_engine_class, 'tokenize')) {
 			return $search_engine_class::tokenize($value);
-		} else {	// Any plugin that doesn't define its own tokenizer (like ElasticSearch) uses the SqlSearch2 tokenizer by default
+		} else {	// Any plugin that doesn't define its own tokenizer uses the SqlSearch2 tokenizer by default
 			require_once(__CA_LIB_DIR__.'/Plugins/SearchEngine/SqlSearch2.php');
 			return WLPlugSearchEngineSqlSearch2::tokenize($value);
 		}
