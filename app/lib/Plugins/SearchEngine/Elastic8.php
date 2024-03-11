@@ -149,7 +149,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 					'_source' => [
 						'enabled' => true,
 					],
-					'dynamic' => "true",
+					'dynamic' => true,
 					'dynamic_templates' => $mapping->getDynamicTemplates(),
 				]
 			];
@@ -745,7 +745,23 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	public function engineName(): string {
 		return 'Elastic8';
 	}
-
+	/**
+	 * Tokenize string for indexing or search
+	 *
+	 * @param string $content
+	 * @param bool $for_search
+	 * @param int $index
+	 *
+	 * @return array Tokenized terms
+	 */
+	static public function tokenize(?string $content, ?bool $for_search=false, ?int $index=0) : array {
+		$content = preg_replace('![\']+!u', '', $content);		// strip apostrophes for compatibility with SearchEngine class, which does the same to all search expressions
+		$words = [$content];
+		return $words;
+		// TODO: do we need to implement stopwords or can ElasticSearch do this?
+		$words = self::filterStopWords($words);
+		return $words;
+	}
 	/**
 	 * Performs the quickest possible search on the index for the specified table_num in $table_num
 	 * using the text in $ps_search. Unlike the search() method, quickSearch doesn't support
