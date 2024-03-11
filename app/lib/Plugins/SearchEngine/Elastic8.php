@@ -36,6 +36,7 @@ use Elastic\ElasticSearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
+use Elastic8\FieldException;
 use Monolog\Handler\ErrorLogHandler;
 use Elastic8\Mapping;
 
@@ -149,7 +150,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 					'_source' => [
 						'enabled' => true,
 					],
-					'dynamic' => "true",
+					'dynamic' => true,
 					'dynamic_templates' => $mapping->getDynamicTemplates(),
 				]
 			];
@@ -179,18 +180,21 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	 * @param array $subject_row_ids
 	 * @param int $content_tablenum
 	 * @param string $content_fieldnum
-	 * @param int $content_container_id
+	 * @param int|null $content_container_id
 	 * @param int $content_row_id
-	 * @param string $content
+	 * @param string|null $content
 	 * @param null|array $options
 	 *    literalContent = array of text content to be applied without tokenization
 	 *    BOOST = Indexing boost to apply
 	 *    PRIVATE = Set indexing to private
 	 *
+	 * @throws ApplicationException
+	 * @throws AuthenticationException
 	 * @throws ClientResponseException
 	 * @throws MissingParameterException
 	 * @throws ServerResponseException
-	 * @throws Exception
+	 * @throws FieldException
+	 * @throws MemoryCacheInvalidParameterException
 	 */
 	public function updateIndexingInPlace(
 		int $subject_tablenum, array $subject_row_ids, int $content_tablenum, string $content_fieldnum,
@@ -221,14 +225,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				$content_row_id);
 		}
 
-		if ((
-				sizeof(self::$doc_content_buffer) +
-				sizeof(self::$update_content_buffer) +
-				sizeof(self::$delete_buffer)
-			) > $this->getOption('maxIndexingBufferSize')
-		) {
-			$this->flushContentBuffer();
-		}
+		$this->flushBufferWhenFull();
 	}
 
 	/**
@@ -300,6 +297,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 		$this->options = [
 			'start' => 0,
+			// TODO: change this to bigga numba
 			'limit' => 100000,
 			// maximum number of hits to return [default=100000],
 			'maxIndexingBufferSize' => $max_indexing_buffer_size
@@ -416,6 +414,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		try {
 			$results = $this->getClient()->search($search_params);
 		} catch (ClientResponseException $e) {
+			// TODO: log this at least
 			$results = ['hits' => ['hits' => []]];
 		}
 
@@ -502,14 +501,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		unset($this->indexing_subject_row_id);
 		unset($this->indexing_subject_tablename);
 
-		if ((
-				sizeof(self::$doc_content_buffer) +
-				sizeof(self::$update_content_buffer) +
-				sizeof(self::$delete_buffer)
-			) > $this->getOption('maxIndexingBufferSize')
-		) {
-			$this->flushContentBuffer();
-		}
+		$this->flushBufferWhenFull();
 	}
 
 	/**
@@ -538,10 +530,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 					// fetch the record
 					try {
-						$record = $this->getClient()->get([
-							'index' => $this->getIndexName($table),
-							'id' => $subject_row_id
-						])['_source'];
+						$record = $this->getSourceRecord($table, $subject_row_id);
 					} catch (ClientResponseException $e) {
 						// record is gone?
 						unset(self::$update_content_buffer[$table][$subject_row_id]);
@@ -745,7 +734,23 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	public function engineName(): string {
 		return 'Elastic8';
 	}
-
+	/**
+	 * Tokenize string for indexing or search
+	 *
+	 * @param string $content
+	 * @param bool $for_search
+	 * @param int $index
+	 *
+	 * @return array Tokenized terms
+	 */
+	static public function tokenize(?string $content, ?bool $for_search=false, ?int $index=0) : array {
+		$content = preg_replace('![\']+!u', '', $content);		// strip apostrophes for compatibility with SearchEngine class, which does the same to all search expressions
+		$words = [$content];
+		return $words;
+		// TODO: do we need to implement stopwords or can ElasticSearch do this?
+		$words = self::filterStopWords($words);
+		return $words;
+	}
 	/**
 	 * Performs the quickest possible search on the index for the specified table_num in $table_num
 	 * using the text in $ps_search. Unlike the search() method, quickSearch doesn't support
@@ -781,5 +786,40 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 	public function isReindexing(): bool {
 		return (defined('__CollectiveAccess_IS_REINDEXING__') && __CollectiveAccess_IS_REINDEXING__);
+	}
+
+	/**
+	 * @return void
+	 * @throws ApplicationException
+	 * @throws AuthenticationException
+	 * @throws ClientResponseException
+	 * @throws ServerResponseException
+	 */
+	private function flushBufferWhenFull(): void {
+		if ((
+				sizeof(self::$doc_content_buffer) +
+				sizeof(self::$update_content_buffer) +
+				sizeof(self::$delete_buffer)
+			) > $this->getOption('maxIndexingBufferSize')
+		) {
+			$this->flushContentBuffer();
+		}
+	}
+
+	/**
+	 * @param $table
+	 * @param int $subject_row_id
+	 *
+	 * @return mixed
+	 * @throws AuthenticationException
+	 * @throws ClientResponseException
+	 * @throws MissingParameterException
+	 * @throws ServerResponseException
+	 */
+	public function getSourceRecord($table, int $subject_row_id) {
+		return $this->getClient()->get([
+			'index' => $this->getIndexName($table),
+			'id' => $subject_row_id
+		])['_source'];
 	}
 }
