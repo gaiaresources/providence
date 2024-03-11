@@ -40,11 +40,11 @@ require_once(__CA_LIB_DIR__."/Db.php");
 	
 class SearchBase extends BaseFindEngine {
 	# ------------------------------------------------
-	protected $opo_db;
-	protected $opo_app_config;
-	protected $opo_search_config;
-	protected $opo_search_indexing_config;
-	protected $opo_engine;
+	protected Db $opo_db;
+	protected Configuration $opo_app_config;
+	protected Configuration $opo_search_config;
+	protected Configuration $opo_search_indexing_config;
+	protected ?IWLPlugSearchEngine $opo_engine;
 	
 	static $s_fields_to_index_cache = array();
 	# ------------------------------------------------
@@ -75,9 +75,9 @@ class SearchBase extends BaseFindEngine {
 	 *
 	 * @param string $plugin_name A valid plugin file name (eg. 'ElasticSearch'), not the actual class name (eg. WLPlugSearchEngineElasticSearch)
 	 * @param Db $db Database connection to use. [Default is null]
-	 * @return WLPlugSearchEngine instance or null if engine is invalid
+	 * @return IWLPlugSearchEngine|null instance or null if engine is invalid
 	 */
-	static public function newSearchEngine($plugin_name=null, $db=null) {		
+	static public function newSearchEngine($plugin_name=null, $db=null) {
 		if (!$plugin_name) {
 			$plugin_name = self::searchEngineName();
 		}
