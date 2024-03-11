@@ -36,6 +36,7 @@ use Elastic\ElasticSearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
+use Elastic8\FieldException;
 use Monolog\Handler\ErrorLogHandler;
 use Elastic8\Mapping;
 
@@ -179,18 +180,21 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	 * @param array $subject_row_ids
 	 * @param int $content_tablenum
 	 * @param string $content_fieldnum
-	 * @param int $content_container_id
+	 * @param int|null $content_container_id
 	 * @param int $content_row_id
-	 * @param string $content
+	 * @param string|null $content
 	 * @param null|array $options
 	 *    literalContent = array of text content to be applied without tokenization
 	 *    BOOST = Indexing boost to apply
 	 *    PRIVATE = Set indexing to private
 	 *
+	 * @throws ApplicationException
+	 * @throws AuthenticationException
 	 * @throws ClientResponseException
 	 * @throws MissingParameterException
 	 * @throws ServerResponseException
-	 * @throws Exception
+	 * @throws FieldException
+	 * @throws MemoryCacheInvalidParameterException
 	 */
 	public function updateIndexingInPlace(
 		int $subject_tablenum, array $subject_row_ids, int $content_tablenum, string $content_fieldnum,
@@ -293,6 +297,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 		$this->options = [
 			'start' => 0,
+			// TODO: change this to bigga numba
 			'limit' => 100000,
 			// maximum number of hits to return [default=100000],
 			'maxIndexingBufferSize' => $max_indexing_buffer_size
@@ -409,6 +414,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		try {
 			$results = $this->getClient()->search($search_params);
 		} catch (ClientResponseException $e) {
+			// TODO: log this at least
 			$results = ['hits' => ['hits' => []]];
 		}
 
@@ -524,10 +530,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 					// fetch the record
 					try {
-						$record = $this->getClient()->get([
-							'index' => $this->getIndexName($table),
-							'id' => $subject_row_id
-						])['_source'];
+						$record = $this->getSourceRecord($table, $subject_row_id);
 					} catch (ClientResponseException $e) {
 						// record is gone?
 						unset(self::$update_content_buffer[$table][$subject_row_id]);
@@ -801,5 +804,22 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		) {
 			$this->flushContentBuffer();
 		}
+	}
+
+	/**
+	 * @param $table
+	 * @param int $subject_row_id
+	 *
+	 * @return mixed
+	 * @throws AuthenticationException
+	 * @throws ClientResponseException
+	 * @throws MissingParameterException
+	 * @throws ServerResponseException
+	 */
+	public function getSourceRecord($table, int $subject_row_id) {
+		return $this->getClient()->get([
+			'index' => $this->getIndexName($table),
+			'id' => $subject_row_id
+		])['_source'];
 	}
 }
