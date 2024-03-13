@@ -838,12 +838,13 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	 * @throws ServerResponseException
 	 * @throws MissingParameterException
 	 */
-	public function checkIndexes() {
+	public function checkIndexes(): bool {
 		$mapping = new Elastic8\Mapping();
 		$tables = $mapping->getTables();
 
 		return $this->getClient()->indices()->exists([
 			'index' => array_map([$this, 'getIndexName'], $tables),
-		]);
+			'ignore_missing' => true,
+		])->asBool();
 	}
 }
