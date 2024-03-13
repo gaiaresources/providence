@@ -39,15 +39,10 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Generic
 
 class Length extends GenericElement {
 
-	public function __construct($table_name, $element_code) {
-		parent::__construct($table_name, $element_code);
-	}
-
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
-		if ($content == '') {
+		$this->setDefaultSuffix(self::SUFFIX_DOUBLE);
+		$content = $this->serializeIfArray($content);
+		if ($content === '') {
 			return parent::getIndexingFragment($content, $options);
 		}
 
@@ -58,6 +53,7 @@ class Length extends GenericElement {
 			return parent::getIndexingFragment((float) $parsed_length->convertTo('METER', 6, 'en_US'),
 				$options);
 		} catch (Exception $e) {
+			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());
 			return [];
 		}
 	}
@@ -88,6 +84,7 @@ class Length extends GenericElement {
 				$term->field
 			);
 		} catch (Exception $e) {
+			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());
 			return $term;
 		}
 	}

@@ -35,16 +35,10 @@ namespace Elastic8\FieldTypes;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
 class Numeric extends GenericElement {
-
-	public function __construct($table_name, $element_code) {
-		parent::__construct($table_name, $element_code);
-	}
-
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
-		if ($content == '') {
+		$this->setDefaultSuffix(self::SUFFIX_FLOAT);
+		$content = $this->serializeIfArray($content);
+		if ($content === '') {
 			return parent::getIndexingFragment($content, $options);
 		}
 

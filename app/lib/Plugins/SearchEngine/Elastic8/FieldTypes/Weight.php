@@ -39,14 +39,8 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Generic
 
 class Weight extends GenericElement {
 
-	public function __construct($table_name, $element_code) {
-		parent::__construct($table_name, $element_code);
-	}
-
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
+		$content = $this->serializeIfArray($content);
 		if ($content == '') {
 			return parent::getIndexingFragment($content, $options);
 		}
@@ -58,6 +52,7 @@ class Weight extends GenericElement {
 			return parent::getIndexingFragment((float) $parsed_length->convertTo('KILOGRAM', 6, 'en_US'),
 				$options);
 		} catch (Exception $e) {
+			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());
 			return [];
 		}
 	}
@@ -93,6 +88,7 @@ class Weight extends GenericElement {
 				$term->field
 			);
 		} catch (Exception $e) {
+			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());
 			return $term;
 		}
 	}

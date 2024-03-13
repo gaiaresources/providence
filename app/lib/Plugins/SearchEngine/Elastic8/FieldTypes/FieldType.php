@@ -38,6 +38,33 @@ use MemoryCacheInvalidParameterException;
 use Zend_Search_Lucene_Index_Term;
 
 abstract class FieldType {
+	protected const SUFFIX_TEXT = 's';
+	protected const SUFFIX_IDNO = 'idno';
+	protected const SUFFIX_TOKENIZE_WS = 'tokenize-ws';
+	protected const SUFFIX_KEYWORD = 'kw';
+	protected const SUFFIX_INTEGER = 'i';
+	protected const SUFFIX_FLOAT = 'f';
+	protected const SUFFIX_DOUBLE = 'd';
+	protected const SUFFIX_BOOLEAN = 'b';
+	protected const SUFFIX_LONG = 'l';
+	protected const SUFFIX_LONG_RANGE = 'lr';
+	protected const SUFFIX_INTEGER_RANGE = 'ir';
+	protected const SUFFIX_DOUBLE_RANGE = 'dr';
+	protected const SUFFIX_WILDCARD = 'w';
+	protected const SUFFIX_GEO_SHAPE = 'gs';
+	protected const SUFFIX_GEO_POINT = 'gp';
+	protected const SUFFIX_OBJECT = 'o';
+	protected const SUFFIX_DATE = 'dt';
+	protected const SUFFIX_DATE_RANGE = 'dtr';
+	protected const SUFFIX_TIME = 't';
+	protected const SUFFIX_TIME_RANGE = 'tr';
+	protected const SUFFIX_CURRENCY = 'currency';
+	protected const SUFFIX_TIMESTAMP = 'ts';
+	protected const SUFFIX_SEPARATOR = '-';
+	/**
+	 * @var mixed
+	 */
+	private $defaultSuffix;
 
 	/**
 	 * @param mixed $content
@@ -45,6 +72,14 @@ abstract class FieldType {
 	abstract public function getIndexingFragment($content, array $options): array;
 
 	abstract public function getRewrittenTerm(Zend_Search_Lucene_Index_Term $term): ?Zend_Search_Lucene_Index_Term;
+
+	protected static function getLogger() {
+		static $logger;
+		if ($logger === null) {
+			$logger = caGetLogger();
+		}
+		return $logger;
+	}
 
 	/**
 	 * Allows implementations to add additional terms to the query
@@ -62,6 +97,8 @@ abstract class FieldType {
 		return false;
 	}
 
+	abstract public function getKey():string;
+
 	/**
 	 * @throws MemoryCacheInvalidParameterException
 	 */
@@ -70,6 +107,7 @@ abstract class FieldType {
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Geocode.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Currency.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Length.php');
+		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/ListItem.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Weight.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Timecode.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Integer.php');
@@ -122,15 +160,44 @@ abstract class FieldType {
 						return new Integer($table, $content_fieldname);
 					case __CA_ATTRIBUTE_VALUE_NUMERIC__:
 						return new Numeric($table, $content_fieldname);
+					case __CA_ATTRIBUTE_VALUE_LIST__:
+						return new ListItem($table, $content_fieldname);
 					default:
 						return new GenericElement($table, $content_fieldname);
 				}
-			} else {
-				return new Intrinsic($table, $content_fieldname);
 			}
-		} else {
-			return new Intrinsic($table, $content_fieldname);
 		}
+		return new Intrinsic($table, $content_fieldname);
 	}
 
+	public function getDataTypeSuffix($suffix = null): string {
+		if (is_null($suffix)) {
+			$suffix = $this->getDefaultSuffix();
+		}
+		return $this->getSeparator() . $suffix;
+	}
+
+	protected function getSeparator(): string {
+		return self::SUFFIX_SEPARATOR;
+	}
+
+	/**
+	 * @param $content
+	 * @deprecated TODO: This serialize call existed in the legacy codebase. Let's run a full reindex and confirm that this doesn't happen. If so then we can remove this method.
+	 * @return string|int|float|bool
+	 */
+	public function serializeIfArray($content) {
+		if (is_array($content)) {
+			self::getLogger()->logError(_t('Unexpected data type for content %s', json_encode($content)));
+			$content = serialize($content);
+		}
+		return $content;
+	}
+
+	public function getDefaultSuffix() {
+		return $this->defaultSuffix;
+	}
+	protected function setDefaultSuffix($suffix) {
+		$this->defaultSuffix = $suffix;
+	}
 }

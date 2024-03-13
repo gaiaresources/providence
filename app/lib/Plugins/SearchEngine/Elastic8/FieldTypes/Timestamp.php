@@ -63,12 +63,10 @@ class Timestamp extends FieldType {
 	 * @param mixed $content
 	 */
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
+		$content = $this->serializeIfArray($content);
 
 		return [
-			str_replace('.', '/', $this->getFieldName()) => $content
+			$this->getKey() => $content
 		];
 	}
 
@@ -106,7 +104,7 @@ class Timestamp extends FieldType {
 		return $return;
 	}
 
-	function getFiltersForTerm(Zend_Search_Lucene_Index_Term $term): array {
+	public function getFiltersForTerm(Zend_Search_Lucene_Index_Term $term): array {
 		$return = [];
 		$parsed_values = caGetISODates($term->text);
 		$fld = str_replace('\\', '', $term->field);
@@ -128,5 +126,9 @@ class Timestamp extends FieldType {
 		];
 
 		return $return;
+	}
+
+	public function getKey():string {
+		return str_replace('.', '/', $this->getFieldName());
 	}
 }

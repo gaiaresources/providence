@@ -52,6 +52,7 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/Mapping.php');
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/Query.php');
 
 class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSearchEngine {
+	protected const LOG_LEVEL_DEFAULT = 'WARNING';
 	protected array $index_content_buffer = [];
 
 	protected ?string $indexing_subject_tablenum = null;
@@ -241,25 +242,25 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		array $fragment, array $record, $table_name, $subject_row_id, $content_row_id
 	) {
 		foreach ($fragment as $key => $val) {
+			$val['content_id'] = $content_row_id;
 			if (isset($record[$key])) {
-				// find the index for this content row id in our _content_ids index list
+				// find the index for this content row
 				$values = $record[$key];
-				$indexes = $record[$key . '_content_ids'];
-				$index = array_search($content_row_id, $indexes);
-				if ($index !== false) {
-					// replace that very index in the value array for this field -- all the other values stay intact
-					$values[$index] = $val;
-				} else { // this particular content row id hasn't been indexed yet --> just add it
-					$values[] = $val;
-					$indexes[] = $content_row_id;
+				$found = false;
+				/** @var array $original_value */
+				foreach ($values as $i => $original_value) {
+					if ($original_value['content_id'] === $content_row_id) {
+						$found = true;
+						$values[$i] = $val;
+					}
 				}
-				self::$update_content_buffer[$table_name][$subject_row_id][$key . '_content_ids']
-					= $indexes;
-				self::$update_content_buffer[$table_name][$subject_row_id][$key] = $values;
+				if (!$found) {
+					$values[] = $val;
+				}
+				// reindex the values to be 0 based.
+				self::$update_content_buffer[$table_name][$subject_row_id][$key] = array_values(array_unique($values));
 			} else { // this field wasn't indexed yet -- just add it
 				self::$update_content_buffer[$table_name][$subject_row_id][$key][] = $val;
-				self::$update_content_buffer[$table_name][$subject_row_id][$key . '_content_ids'][]
-					= $content_row_id;
 			}
 		}
 	}
@@ -273,10 +274,11 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	protected function getClient(): Client {
 		if (!self::$client) {
 			$logger = new \Monolog\Logger('elasticsearch');
-			$log_level = Monolog\Logger::WARNING;
+			$log_level = self::LOG_LEVEL_DEFAULT;
 			if (defined('__CA_ELASTICSEARCH_LOG_LEVEL__')) {
 				$log_level = __CA_ELASTICSEARCH_LOG_LEVEL__;
 			}
+			$log_level = \Monolog\Logger::toMonologLevel($log_level);
 			$logger->pushHandler(new ErrorLogHandler(null, $log_level));
 			self::$client = Elastic\Elasticsearch\ClientBuilder::create()
 				->setHosts([$this->elasticsearch_base_url])
@@ -471,10 +473,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 					$this->indexing_subject_row_id, $content_row_id);
 			} else { // otherwise create record in index
 				foreach ($fragment as $key => $val) {
+					$val['content_id'] = $content_row_id;
 					$this->index_content_buffer[$key][] = $val;
-					// this list basically indexes the values above by content row id. we need that to have a chance
-					// to update indexing for specific values [content row ids] in place
-					$this->index_content_buffer[$key . '_content_ids'][] = $content_row_id;
 				}
 			}
 		}
@@ -541,25 +541,17 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 						if (isset($record[$key])) {
 							// find the index for this content row id in our _content_ids index list
 							$values = $record[$key];
-							$indexes = $record[$key . '_content_ids'];
-							if (is_array($indexes)) {
-								$index = array_search($field_row_id, $indexes);
-								// nuke that very index in the value array for this field -- all the other values, including the indexes stay intact
-								unset($values[$index]);
-								unset($indexes[$index]);
-							} else {
-								if (sizeof($values) == 1) {
-									$values = [];
-									$indexes = [];
-								}
-							}
+							// Use array_filter with a custom callback function
+							$values = array_filter($values, function ($element) use ($field_row_id) {
+								// Check if the 'content_id' matches the parameter
+								return $element['content_id'] != $field_row_id;
+							});
+
 
 							// we reindex both value and index arrays here, starting at 0
 							// json_encode seems to treat something like array(1=>'foo') as object/hash, rather than a list .. which is not good
 							self::$update_content_buffer[$table][$subject_row_id][$key]
 								= array_values($values);
-							self::$update_content_buffer[$table][$subject_row_id][$key . '_content_ids']
-								= array_values($indexes);
 						}
 					}
 				}
@@ -686,7 +678,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 					// If there are errors, throw ApplicationException
 					if (!empty($errors)) {
-						$message = _t("%1 out of %2 bulk operation(s) failed. Errors: %3.", count($errors), count($responses), implode('; ', $errors));
+						$message = _t("%1 out of %2 bulk operation(s) failed. Errors: %3.", count($errors), count($responses['items']), implode('; ', $errors));
 						$this->getClient()->getLogger()->error($message);
 						error_log($message);
 						// TODO: Do we just log this or actually throw the exception? Exception when > certain percentage of errors?

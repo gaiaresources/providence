@@ -38,36 +38,29 @@ use Zend_Search_Lucene_Search_Query_Phrase;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
 class DateRange extends GenericElement {
-	public function __construct($table_name, $element_code) {
-		parent::__construct($table_name, $element_code);
-	}
 
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
+		$content = $this->serializeIfArray($content);
 		$return = [];
 
 		if (!is_array($parsed_content = caGetISODates($content, ['returnUnbounded' => true]))) {
-			return [];
+			return $return;
 		}
-
-		$key = $this->getTableName() . '/' . $this->getElementCode();
-		$return[$key . '_text'] = $content;
 
 		$rewritten_start = caRewriteDateForElasticSearch($parsed_content["start"], true);
 		$rewritten_end = caRewriteDateForElasticSearch($parsed_content["end"], false);
 
-		$return[$key . '_text'] = $content;
-		$return[$key] = [$rewritten_start, $rewritten_end];
-		$return[$key . '_start'] = $rewritten_start;
-		$return[$key . '_end'] = $rewritten_end;
+		$return[$this->getDataTypeSuffix()] = $content;
+		$return[$this->getDataTypeSuffix(self::SUFFIX_DATE_RANGE)] = [
+			'gte' => $rewritten_start,
+			'lte' => $rewritten_end
+		];
 
-		return $return;
+		return [$this->getKey() => $return];
 	}
 
 	public function getFiltersForPhraseQuery(Zend_Search_Lucene_Search_Query_Phrase $query): array {
-		$terms = $return = [];
+		$terms = [];
 		$fld = null;
 		foreach ($query->getQueryTerms() as $term) {
 			$term = caRewriteElasticSearchTermFieldSpec($term);
