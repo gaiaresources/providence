@@ -34,13 +34,10 @@ namespace Elastic8\FieldTypes;
 
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
-class Integer extends GenericElement {
-
-
+class ListItem extends GenericElement {
 	public function getIndexingFragment($content, array $options): array {
-
+		$this->setDefaultSuffix(self::SUFFIX_KEYWORD);
 		$content = $this->serializeIfArray($content);
-		$this->setDefaultSuffix(self::SUFFIX_INTEGER);
-		return parent::getIndexingFragment((int) $content, $options);
+		return parent::getIndexingFragment($content, $options);
 	}
 }

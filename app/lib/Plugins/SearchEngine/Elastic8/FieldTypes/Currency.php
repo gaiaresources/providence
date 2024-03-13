@@ -38,16 +38,9 @@ use Zend_Search_Lucene_Index_Term;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
 class Currency extends GenericElement {
-
-	public function __construct($table_name, $element_code) {
-		parent::__construct($table_name, $element_code);
-	}
-
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
-		if ($content == '') {
+		$content = $this->serializeIfArray($content);
+		if ($content === '') {
 			return parent::getIndexingFragment($content, $options);
 		}
 
@@ -57,9 +50,10 @@ class Currency extends GenericElement {
 
 		if (is_array($parsed_currency) && isset($parsed_currency['value_decimal1'])) {
 			return [
-				$this->getTableName() . '/' . $this->getElementCode() => $parsed_currency['value_decimal1'],
-				$this->getTableName() . '/' . $this->getElementCode()
-				. '_currency' => $parsed_currency['value_longtext1'],
+				$this->getKey() => [
+					$this->getDataTypeSuffix(self::SUFFIX_CURRENCY) => $parsed_currency['value_decimal1'],
+					$this->getDataTypeSuffix(self::SUFFIX_TEXT) => $parsed_currency['value_longtext1']
+				],
 			];
 		} else {
 			return parent::getIndexingFragment($content, $options);

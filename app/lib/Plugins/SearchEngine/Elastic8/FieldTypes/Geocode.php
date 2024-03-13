@@ -40,22 +40,17 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Generic
 require_once(__CA_LIB_DIR__ . '/Attributes/Values/GeocodeAttributeValue.php');
 
 class Geocode extends GenericElement {
-	public function __construct($table_name, $element_code) {
-		parent::__construct($table_name, $element_code);
-	}
 
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
-		if ($content == '') {
+		$content = $this->serializeIfArray($content);
+		if ($content === '') {
 			return parent::getIndexingFragment($content, $options);
 		}
 		$return = [];
 
 		$geocode_parser = new GeocodeAttributeValue();
 
-		$return[$this->getTableName() . '/' . $this->getElementCode() . '_text'] = $content;
+		$return[$this->getDataTypeSuffix()] = $content;
 
 		//@see https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-geo-shape-type.html
 		if ($coords = $geocode_parser->parseValue($content, [])) {
@@ -66,7 +61,7 @@ class Geocode extends GenericElement {
 				// google maps and others usually return latitude, longitude, which is also what we store
 				if (sizeof($points) == 1) {
 					$tmp = explode(',', $points[0]);
-					$return[$this->getTableName() . '/' . $this->getElementCode()] = [
+					$return[self::SUFFIX_GEO_POINT] = [
 						'type' => 'point',
 						'coordinates' => [(float) $tmp[1], (float) $tmp[0]]
 					];
@@ -78,7 +73,7 @@ class Geocode extends GenericElement {
 						$coordinates_for_es[] = [(float) $tmp[1], (float) $tmp[0]];
 					}
 
-					$return[$this->getTableName() . '/' . $this->getElementCode()] = [
+					$return[$this->getDataTypeSuffix(self::SUFFIX_GEO_SHAPE)] = [
 						'type' => 'polygon',
 						'coordinates' => $coordinates_for_es
 					];
@@ -86,7 +81,7 @@ class Geocode extends GenericElement {
 			}
 		}
 
-		return $return;
+		return [$this->getKey() => $return];
 	}
 
 	public function getRewrittenTerm(Zend_Search_Lucene_Index_Term $term): ?Zend_Search_Lucene_Index_Term {

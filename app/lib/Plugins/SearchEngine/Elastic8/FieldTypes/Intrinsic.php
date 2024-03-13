@@ -78,26 +78,38 @@ class Intrinsic extends FieldType {
 	 * @param mixed $content
 	 */
 	public function getIndexingFragment($content, array $options): array {
-		if (is_array($content)) {
-			$content = serialize($content);
-		}
-		if ($content == '') {
+		$content = $this->serializeIfArray($content);
+		if ($content === '') {
 			$content = null;
 		}
+		$fieldTypeToSuffix = [
+			FT_BIT => self::SUFFIX_BOOLEAN,
+			FT_TIME => self::SUFFIX_TIME,
+			FT_NUMBER => self::SUFFIX_INTEGER,// TODO: Are there any FT_NUMBER which are not integer,
+			FT_TIMERANGE => self::SUFFIX_TIME_RANGE,
+			FT_TIMECODE => self::SUFFIX_TIME,
+		];
 
 		$instance = Datamodel::getInstance($this->getTableName(), true);
 		$field_info = Datamodel::getFieldInfo($this->getTableName(), $this->getFieldName());
 
-		switch ($field_info['FIELD_TYPE']) {
+		$fieldType = $field_info['FIELD_TYPE'];
+		$suffix = $fieldTypeToSuffix[$fieldType] ?? self::SUFFIX_TEXT;
+		switch ($fieldType) {
 			case (FT_BIT):
-				$content = (bool) $content ? 1 : 0;
+				$content = (bool)$content;
 				break;
 			case (FT_NUMBER):
+				if (in_array($this->getFieldName(), ['hier_left', 'hier_right'])) {
+					$suffix = self::SUFFIX_DOUBLE;
+				}
 			case (FT_TIME):
 			case (FT_TIMERANGE):
 			case (FT_TIMECODE):
 				if (!isset($field_info['LIST_CODE'])) {
 					$content = (float) $content;
+				} else if ($suffix !== self::SUFFIX_DOUBLE) {
+					$suffix = self::SUFFIX_KEYWORD;
 				}
 				break;
 			default:
@@ -105,9 +117,10 @@ class Intrinsic extends FieldType {
 				break;
 		}
 
-		$return = [
-			$this->getTableName() . '/' . $this->getFieldName() => $content
-		];
+		if (in_array('DONT_TOKENIZE', $options, true)) {
+			$suffix = self::SUFFIX_KEYWORD;
+		}
+
 
 		if ($instance->getProperty('ID_NUMBERING_ID_FIELD') == $this->getFieldName()
 			|| (is_array($options)
@@ -123,18 +136,19 @@ class Intrinsic extends FieldType {
 			}
 
 			$return = [
-				$this->getTableName() . '/' . $this->getFieldName() => $values
+				$this->getDataTypeSuffix(self::SUFFIX_IDNO) => $values
+			];
+		} else {
+			$return = [
+				$this->getDataTypeSuffix($suffix) => $content
 			];
 		}
 
 		if ($rel_type_id = caGetOption('relationship_type_id', $options)) {
-			// we use slashes as table_name/field_name delimiter, so let's use something else for the relationship type code
-			$return[$this->getTableName() . '/' . $this->getFieldName() . '|'
-			. caGetRelationshipTypeCode($rel_type_id)]
-				= $content;
+			$return[ caGetRelationshipTypeCode($rel_type_id) . $this->getDataTypeSuffix(self::SUFFIX_KEYWORD)] = $content;
 		}
 
-		return $return;
+		return [$this->getKey() => $return];
 	}
 
 	public function getRewrittenTerm(Zend_Search_Lucene_Index_Term $term): Zend_Search_Lucene_Index_Term {
@@ -181,4 +195,12 @@ class Intrinsic extends FieldType {
 			);
 		}
 	}
+
+	/**
+	 * @return string
+	 */
+	public function getKey(): string {
+		return $this->getTableName() . '/' . $this->getFieldName();
+	}
+
 }

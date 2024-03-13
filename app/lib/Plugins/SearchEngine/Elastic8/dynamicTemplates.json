@@ -65,15 +65,6 @@
     }
   },
   {
-    "TODO remove this" : {
-      "match_mapping_type" : "*",
-      "match" : "*type_id",
-      "mapping" : {
-        "type" : "keyword"
-      }
-    }
-  },
-  {
     "floats" : {
       "match_mapping_type" : "*",
       "match" : "*-f",
@@ -133,20 +124,6 @@
       "match" : "*-dr",
       "mapping" : {
         "type" : "double_range"
-      }
-    }
-  },
-  {
-    "floats" : {
-      "match_mapping_type" : "*",
-      "match" : "*-f",
-      "mapping" : {
-        "type" : "float",
-        "fields" : {
-          "k" : {
-            "type" : "keyword"
-          }
-        }
       }
     }
   },
@@ -254,7 +231,7 @@
   {
     "content_ids" : {
       "match_mapping_type" : "*",
-      "match" : "*_content_ids",
+      "match" : "content_id",
       "mapping" : {
         "type" : "keyword"
       }
