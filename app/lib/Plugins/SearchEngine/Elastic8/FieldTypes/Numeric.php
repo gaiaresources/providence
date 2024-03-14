@@ -35,8 +35,9 @@ namespace Elastic8\FieldTypes;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
 class Numeric extends GenericElement {
+	protected const DEFAULT_SUFFIX = self::SUFFIX_FLOAT;
+
 	public function getIndexingFragment($content, array $options): array {
-		$this->setDefaultSuffix(self::SUFFIX_FLOAT);
 		$content = $this->serializeIfArray($content);
 		if ($content === '') {
 			return parent::getIndexingFragment($content, $options);

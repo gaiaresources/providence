@@ -60,10 +60,6 @@ class GenericElement extends FieldType {
 		return $this->element_code;
 	}
 
-	public function setElementCode(string $element_code) {
-		$this->element_code = $element_code;
-	}
-
 	public function getTableName(): string {
 		return $this->table_name;
 	}
@@ -79,7 +75,7 @@ class GenericElement extends FieldType {
 		}
 
 		return [
-			$this->getKey() =>[ $this->getDataTypeSuffix() => $content]
+			$this->getKey() => [$this->getDataTypeSuffix() => $content]
 		];
 	}
 
