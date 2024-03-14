@@ -1,10 +1,20 @@
 [
   {
+    "_all" : {
+      "match_mapping_type" : "*",
+      "match" : "_all",
+      "mapping" : {
+        "type" : "text"
+      }
+    }
+  },
+  {
     "strings" : {
       "match_mapping_type" : "*",
       "match" : "*-s",
       "mapping" : {
         "type" : "text",
+        "copy_to" : "_all",
         "fields" : {
           "keyword" : {
             "type" : "keyword",
@@ -20,6 +30,7 @@
       "match" : "*-idno",
       "mapping" : {
         "type" : "text",
+        "copy_to" : "_all",
         "analyzer" : "keyword_lowercase",
         "fields" : {
           "keyword" : {
@@ -36,6 +47,7 @@
       "match" : "*-tokenize-ws",
       "mapping" : {
         "type" : "text",
+        "copy_to" : "_all",
         "analyzer" : "whitespace",
         "fields" : {
           "keyword" : {
@@ -51,7 +63,8 @@
       "match_mapping_type" : "*",
       "match" : "*-kw",
       "mapping" : {
-        "type" : "keyword"
+        "type" : "keyword",
+        "copy_to" : "_all"
       }
     }
   },
@@ -60,7 +73,8 @@
       "match_mapping_type" : "*",
       "match" : "*-i",
       "mapping" : {
-        "type" : "integer"
+        "type" : "integer",
+        "copy_to" : "_all"
       }
     }
   },
@@ -69,7 +83,8 @@
       "match_mapping_type" : "*",
       "match" : "*-f",
       "mapping" : {
-        "type" : "float"
+        "type" : "float",
+        "copy_to" : "_all"
       }
     }
   },
@@ -78,7 +93,8 @@
       "match_mapping_type" : "*",
       "match" : "*-d",
       "mapping" : {
-        "type" : "double"
+        "type" : "double",
+        "copy_to" : "_all"
       }
     }
   },
@@ -87,7 +103,8 @@
       "match_mapping_type" : "*",
       "match" : "*-b",
       "mapping" : {
-        "type" : "boolean"
+        "type" : "boolean",
+        "copy_to" : "_all"
       }
     }
   },
@@ -96,7 +113,8 @@
       "match_mapping_type" : "*",
       "match" : "*-l",
       "mapping" : {
-        "type" : "long"
+        "type" : "long",
+        "copy_to" : "_all"
       }
     }
   },
@@ -132,7 +150,8 @@
       "match_mapping_type" : "*",
       "match" : "*-w",
       "mapping" : {
-        "type" : "wildcard"
+        "type" : "wildcard",
+        "copy_to" : "_all"
       }
     }
   },
@@ -169,6 +188,7 @@
       "match" : "*-dt",
       "mapping" : {
         "type" : "date",
+        "copy_to" : "_all",
         "format" : "date_optional_time||year||year_month||year_month_day",
         "fields" : {
           "raw" : {
@@ -194,6 +214,7 @@
       "match" : "*-t",
       "mapping" : {
         "type" : "date",
+        "copy_to" : "_all",
         "format" : "time||time_no_millis||HH:mm:ss.SSS||HH:mm:ss||HH:mm||HH"
       }
     }
@@ -214,6 +235,7 @@
       "match" : "*-currency",
       "mapping" : {
         "type" : "scaled_float",
+        "copy_to" : "_all",
         "scaling_factor" : 100
       }
     }
@@ -224,6 +246,7 @@
       "match" : "*-ts",
       "mapping" : {
         "type" : "date",
+        "copy_to" : "_all",
         "format" : "epoch_millis"
       }
     }
@@ -233,7 +256,8 @@
       "match_mapping_type" : "*",
       "match" : "content_id",
       "mapping" : {
-        "type" : "keyword"
+        "type" : "keyword",
+        "copy_to" : "_all"
       }
     }
   },
@@ -243,6 +267,7 @@
       "match" : "created",
       "mapping" : {
         "type" : "date",
+        "copy_to" : "_all",
         "format" : "date_optional_time"
       }
     }
@@ -253,6 +278,7 @@
       "match" : "modified",
       "mapping" : {
         "type" : "date",
+        "copy_to" : "_all",
         "format" : "date_optional_time"
       }
     }
