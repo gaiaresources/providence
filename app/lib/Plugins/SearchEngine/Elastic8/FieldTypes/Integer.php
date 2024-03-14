@@ -35,12 +35,12 @@ namespace Elastic8\FieldTypes;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
 class Integer extends GenericElement {
-
+	protected const DEFAULT_SUFFIX = self::SUFFIX_INTEGER;
 
 	public function getIndexingFragment($content, array $options): array {
 
 		$content = $this->serializeIfArray($content);
-		$this->setDefaultSuffix(self::SUFFIX_INTEGER);
+
 		return parent::getIndexingFragment((int) $content, $options);
 	}
 }

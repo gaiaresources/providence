@@ -62,16 +62,8 @@ class Intrinsic extends FieldType {
 		return $this->table_name;
 	}
 
-	public function setTableName(string $table_name) {
-		$this->table_name = $table_name;
-	}
-
 	public function getFieldName(): string {
 		return $this->field_name;
-	}
-
-	public function setFieldName(string $field_name) {
-		$this->field_name = $field_name;
 	}
 
 	/**
@@ -97,7 +89,7 @@ class Intrinsic extends FieldType {
 		$suffix = $fieldTypeToSuffix[$fieldType] ?? self::SUFFIX_TEXT;
 		switch ($fieldType) {
 			case (FT_BIT):
-				$content = (bool)$content;
+				$content = (bool) $content;
 				break;
 			case (FT_NUMBER):
 				if (in_array($this->getFieldName(), ['hier_left', 'hier_right'])) {
@@ -123,8 +115,7 @@ class Intrinsic extends FieldType {
 
 
 		if ($instance->getProperty('ID_NUMBERING_ID_FIELD') == $this->getFieldName()
-			|| (is_array($options)
-				&& in_array('INDEX_AS_IDNO', $options, true))
+			|| in_array('INDEX_AS_IDNO', $options, true)
 		) {
 			if (method_exists($instance, "getIDNoPlugInInstance")
 				&& ($idno
@@ -145,7 +136,8 @@ class Intrinsic extends FieldType {
 		}
 
 		if ($rel_type_id = caGetOption('relationship_type_id', $options)) {
-			$return[ caGetRelationshipTypeCode($rel_type_id) . $this->getDataTypeSuffix(self::SUFFIX_KEYWORD)] = $content;
+			$return[caGetRelationshipTypeCode($rel_type_id) . $this->getDataTypeSuffix(self::SUFFIX_KEYWORD)]
+				= $content;
 		}
 
 		return [$this->getKey() => $return];

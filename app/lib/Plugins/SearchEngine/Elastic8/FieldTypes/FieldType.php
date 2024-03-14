@@ -61,10 +61,7 @@ abstract class FieldType {
 	protected const SUFFIX_CURRENCY = 'currency';
 	protected const SUFFIX_TIMESTAMP = 'ts';
 	protected const SUFFIX_SEPARATOR = '-';
-	/**
-	 * @var mixed
-	 */
-	private $defaultSuffix;
+	protected const DEFAULT_SUFFIX = self::SUFFIX_TEXT;
 
 	/**
 	 * @param mixed $content
@@ -78,6 +75,7 @@ abstract class FieldType {
 		if ($logger === null) {
 			$logger = caGetLogger();
 		}
+
 		return $logger;
 	}
 
@@ -97,7 +95,7 @@ abstract class FieldType {
 		return false;
 	}
 
-	abstract public function getKey():string;
+	abstract public function getKey(): string;
 
 	/**
 	 * @throws MemoryCacheInvalidParameterException
@@ -122,7 +120,7 @@ abstract class FieldType {
 
 		// if this is an indexing field name, rewrite it
 		$could_be_attribute = true;
-		if (preg_match("/^(I|A)[0-9]+$/", $content_fieldname)) {
+		if (preg_match("/^([IA])[0-9]+$/", $content_fieldname)) {
 
 			if ($content_fieldname[0] === 'A') { // Metadata attribute
 				$field_num_proc = (int) substr($content_fieldname, 1);
@@ -167,13 +165,15 @@ abstract class FieldType {
 				}
 			}
 		}
+
 		return new Intrinsic($table, $content_fieldname);
 	}
 
 	public function getDataTypeSuffix($suffix = null): string {
 		if (is_null($suffix)) {
-			$suffix = $this->getDefaultSuffix();
+			$suffix = self::DEFAULT_SUFFIX;
 		}
+
 		return $this->getSeparator() . $suffix;
 	}
 
@@ -183,21 +183,18 @@ abstract class FieldType {
 
 	/**
 	 * @param $content
-	 * @deprecated TODO: This serialize call existed in the legacy codebase. Let's run a full reindex and confirm that this doesn't happen. If so then we can remove this method.
+	 *
 	 * @return string|int|float|bool
+	 * @deprecated TODO: This serialize call existed in the legacy codebase. Let's run a full reindex and confirm that
+	 *     this doesn't happen. If so then we can remove this method.
 	 */
 	public function serializeIfArray($content) {
 		if (is_array($content)) {
 			self::getLogger()->logError(_t('Unexpected data type for content %s', json_encode($content)));
 			$content = serialize($content);
 		}
+
 		return $content;
 	}
 
-	public function getDefaultSuffix() {
-		return $this->defaultSuffix;
-	}
-	protected function setDefaultSuffix($suffix) {
-		$this->defaultSuffix = $suffix;
-	}
 }

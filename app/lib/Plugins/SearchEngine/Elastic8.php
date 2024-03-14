@@ -278,8 +278,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			if (defined('__CA_ELASTICSEARCH_LOG_LEVEL__')) {
 				$log_level = __CA_ELASTICSEARCH_LOG_LEVEL__;
 			}
-			$log_level = \Monolog\Logger::toMonologLevel($log_level);
-			$logger->pushHandler(new ErrorLogHandler(null, $log_level));
+			$monolog_level = \Monolog\Logger::toMonologLevel($log_level);
+			$logger->pushHandler(new ErrorLogHandler(null, $monolog_level));
 			self::$client = Elastic\Elasticsearch\ClientBuilder::create()
 				->setHosts([$this->elasticsearch_base_url])
 				->setLogger($logger)
@@ -664,7 +664,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 			try {
 				$responses = $this->getClient()->bulk($bulk_params);
-				if ($responses['errors']){
+				if ($responses['errors']) {
 					// Log errors for each operation
 					foreach ($responses['items'] as $item) {
 						if (isset($item['index']['error'])) {
@@ -678,7 +678,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 					// If there are errors, throw ApplicationException
 					if (!empty($errors)) {
-						$message = _t("%1 out of %2 bulk operation(s) failed. Errors: %3.", count($errors), count($responses['items']), implode('; ', $errors));
+						$message = _t("%1 out of %2 bulk operation(s) failed. Errors: %3.", count($errors),
+							count($responses['items']), implode('; ', $errors));
 						$this->getClient()->getLogger()->error($message);
 						error_log($message);
 						// TODO: Do we just log this or actually throw the exception? Exception when > certain percentage of errors?
@@ -726,6 +727,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	public function engineName(): string {
 		return 'Elastic8';
 	}
+
 	/**
 	 * Tokenize string for indexing or search
 	 *
@@ -735,14 +737,18 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	 *
 	 * @return array Tokenized terms
 	 */
-	static public function tokenize(?string $content, ?bool $for_search=false, ?int $index=0) : array {
-		$content = preg_replace('![\']+!u', '', $content);		// strip apostrophes for compatibility with SearchEngine class, which does the same to all search expressions
+	static public function tokenize(?string $content, ?bool $for_search = false, ?int $index = 0): array {
+		$content = preg_replace('![\']+!u', '',
+			$content);        // strip apostrophes for compatibility with SearchEngine class, which does the same to all search expressions
 		$words = [$content];
+
 		return $words;
 		// TODO: do we need to implement stopwords or can ElasticSearch do this?
 		$words = self::filterStopWords($words);
+
 		return $words;
 	}
+
 	/**
 	 * Performs the quickest possible search on the index for the specified table_num in $table_num
 	 * using the text in $ps_search. Unlike the search() method, quickSearch doesn't support
@@ -752,7 +758,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	 *
 	 * @param $pn_table_num - The table index to search on
 	 * @param $ps_search - The text to search on
-	 * @param array $pa_options - an optional associative array specifying search options. Supported options are: 'limit'
+	 * @param array $pa_options - an optional associative array specifying search options. Supported options are:
+	 *     'limit'
 	 *     (the maximum number of results to return)
 	 *
 	 * @return array - an array of results is returned keyed by primary key id. The array values boolean true. This is
