@@ -370,7 +370,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	 * @throws Zend_Search_Lucene_Exception
 	 */
 	public function search(
-		int $subject_tablenum, string $search_expression, array $filters = [], $rewritten_query
+		int $subject_tablenum, string $search_expression, array $filters = [], $rewritten_query=null
 	): WLPlugSearchEngineElastic8Result {
 		Debug::msg("[ElasticSearch] incoming search query is: {$search_expression}");
 		Debug::msg("[ElasticSearch] incoming query filters are: " . print_r($filters, true));

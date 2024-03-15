@@ -29,7 +29,6 @@
 namespace Installer;
 
 require_once(__CA_LIB_DIR__.'/Media/MediaVolumes.php');
-require_once(__CA_LIB_DIR__.'/Plugins/SearchEngine/ElasticSearch.php');
 require_once(__CA_LIB_DIR__.'/Plugins/SearchEngine/Elastic8.php');
 require_once(__CA_APP_DIR__.'/helpers/configurationHelpers.php');
 
@@ -422,15 +421,6 @@ class Installer {
 			}
 		}
 
-		if (($this->config->get('search_engine_plugin') == 'ElasticSearch') && (!$this->isAlreadyInstalled() || (defined('__CA_ALLOW_INSTALLER_TO_OVERWRITE_EXISTING_INSTALLS__') && __CA_ALLOW_INSTALLER_TO_OVERWRITE_EXISTING_INSTALLS__ && $this->overwrite))) {
-			$o_es = new \WLPlugSearchEngineElasticSearch();
-			try {
-				$o_es->truncateIndex();
-			} catch(DatabaseException $e) {
-				// noop. this can happen when we operate on an empty database where ca_application_vars doesn't exist yet
-			}
-		}
-
 		if (($this->config->get('search_engine_plugin') == 'Elastic8') && (!$this->isAlreadyInstalled() || (defined('__CA_ALLOW_INSTALLER_TO_OVERWRITE_EXISTING_INSTALLS__') && __CA_ALLOW_INSTALLER_TO_OVERWRITE_EXISTING_INSTALLS__ && $this->overwrite))) {
 			$o_es = new \WLPlugSearchEngineElastic8();
 			try {
@@ -473,9 +463,9 @@ class Installer {
 			$o_vars->save();
 		}
 
-		// refresh mapping if ElasticSearch is used
-		if ($this->config->get('search_engine_plugin') == 'ElasticSearch') {
-			$o_es = new \WLPlugSearchEngineElasticSearch();
+		// refresh mapping if Elastic8 is used
+		if ($this->config->get('search_engine_plugin') == 'Elastic8') {
+			$o_es = new \WLPlugSearchEngineElastic8();
 			$o_es->refreshMapping(true);
 			\CompositeCache::flush();
 		}
