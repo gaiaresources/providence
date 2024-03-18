@@ -177,95 +177,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	}
 
 	/**
-	 * @param int $subject_tablenum
-	 * @param array $subject_row_ids
-	 * @param int $content_tablenum
-	 * @param string $content_fieldnum
-	 * @param int|null $content_container_id
-	 * @param int $content_row_id
-	 * @param string|null $content
-	 * @param null|array $options
-	 *    literalContent = array of text content to be applied without tokenization
-	 *    BOOST = Indexing boost to apply
-	 *    PRIVATE = Set indexing to private
-	 *
-	 * @throws ApplicationException
-	 * @throws AuthenticationException
-	 * @throws ClientResponseException
-	 * @throws MissingParameterException
-	 * @throws ServerResponseException
-	 * @throws FieldException
-	 * @throws MemoryCacheInvalidParameterException
-	 */
-	public function updateIndexingInPlace(
-		int $subject_tablenum, array $subject_row_ids, int $content_tablenum, string $content_fieldnum,
-		?int $content_container_id, int $content_row_id, ?string $content, ?array $options = null
-	) {
-		$table = Datamodel::getTableName($subject_tablenum);
-
-		$field = new Elastic8\Field($content_tablenum, $content_fieldnum);
-		$fragment = $field->getIndexingFragment($content, $options);
-
-		foreach ($subject_row_ids as $subject_row_id) {
-			// fetch the record
-			try {
-				$record = self::$record_cache[$table][$subject_row_id] ?? null;
-				if (is_null($record)) {
-					$f = [
-						'index' => $this->getIndexName($table),
-						'id' => $subject_row_id
-					];
-					$record = $this->getClient()->get($f)['_source'];
-				}
-			} catch (ClientResponseException $e) {
-				$record = []; // record doesn't exist yet --> the update API will create it
-			}
-			self::$record_cache[$table][$subject_row_id] = $record;
-
-			$this->addFragmentToUpdateContentBuffer($fragment, $record, $table, $subject_row_id,
-				$content_row_id);
-		}
-
-		$this->flushBufferWhenFull();
-	}
-
-	/**
-	 * Utility function that adds a given indexing fragment to the update content buffer
-	 *
-	 * @param array $fragment
-	 * @param array $record
-	 * @param $table_name
-	 * @param $subject_row_id
-	 * @param $content_row_id
-	 */
-	private function addFragmentToUpdateContentBuffer(
-		array $fragment, array $record, $table_name, $subject_row_id, $content_row_id
-	) {
-		foreach ($fragment as $key => $val) {
-			$val['content_id'] = $content_row_id;
-			if (isset($record[$key])) {
-				// find the index for this content row
-				$values = $record[$key];
-				$found = false;
-				/** @var array $original_value */
-				foreach ($values as $i => $original_value) {
-					if ($original_value['content_id'] === $content_row_id) {
-						$found = true;
-						$values[$i] = $val;
-					}
-				}
-				if (!$found) {
-					$values[] = $val;
-				}
-				// reindex the values to be 0 based.
-				self::$update_content_buffer[$table_name][$subject_row_id][$key] = array_values(array_unique($values));
-			} else { // this field wasn't indexed yet -- just add it
-				self::$update_content_buffer[$table_name][$subject_row_id][$key][] = $val;
-			}
-		}
-	}
-
-	/**
 	 * Get ElasticSearch client
 	 *
 	 * @return Client
@@ -307,7 +218,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		];
 
 		$this->capabilities = [
-			'incremental_reindexing' => true
+			'incremental_reindexing' => false
 		];
 	}
 
