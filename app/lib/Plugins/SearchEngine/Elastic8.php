@@ -367,7 +367,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			$fragment = $field->getIndexingFragment($ps_content, $options);
 
 			foreach ($fragment as $key => $val) {
-				$val['content_id'] = $content_row_id;
 				$this->index_content_buffer[$key][] = $val;
 			}
 		}
@@ -432,14 +431,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 					foreach ($fragment as $key => $val) {
 						if (isset($record[$key])) {
-							// find the index for this content row id in our _content_ids index list
 							$values = $record[$key];
-							// Use array_filter with a custom callback function
-							$values = array_filter($values, function ($element) use ($field_row_id) {
-								// Check if the 'content_id' matches the parameter
-								return $element['content_id'] != $field_row_id;
-							});
-
 
 							// we reindex both value and index arrays here, starting at 0
 							// json_encode seems to treat something like array(1=>'foo') as object/hash, rather than a list .. which is not good
