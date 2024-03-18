@@ -454,28 +454,10 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 		foreach ($content as $ps_content) {
 			$fragment = $field->getIndexingFragment($ps_content, $options);
-			$record = null;
 
-			if (!$this->isReindexing()) {
-				try {
-					$record = $this->getClient()->get([
-						'index' => $this->getIndexName($this->indexing_subject_tablename),
-						'id' => $this->indexing_subject_row_id
-					])['_source'];
-				} catch (ClientResponseException $e) {
-					$record = null;
-				}
-			}
-
-			// if the record already exists, do incremental indexing
-			if (is_array($record) && (sizeof($record) > 0)) {
-				$this->addFragmentToUpdateContentBuffer($fragment, $record, $this->indexing_subject_tablename,
-					$this->indexing_subject_row_id, $content_row_id);
-			} else { // otherwise create record in index
-				foreach ($fragment as $key => $val) {
-					$val['content_id'] = $content_row_id;
-					$this->index_content_buffer[$key][] = $val;
-				}
+			foreach ($fragment as $key => $val) {
+				$val['content_id'] = $content_row_id;
+				$this->index_content_buffer[$key][] = $val;
 			}
 		}
 	}
