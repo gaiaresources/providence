@@ -557,14 +557,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				}
 			}
 
-			if ((
-					sizeof(self::$doc_content_buffer) +
-					sizeof(self::$update_content_buffer) +
-					sizeof(self::$delete_buffer)
-				) > $this->getOption('maxIndexingBufferSize')
-			) {
-				$this->flushContentBuffer();
-			}
+			$this->flushBufferWhenFull();
 
 		} else {
 			// queue record for removal -- also make sure we don't try do any unnecessary indexing
