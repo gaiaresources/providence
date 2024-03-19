@@ -140,7 +140,8 @@ abstract class FieldType {
 		if ($content_fieldname && $could_be_attribute) {
 			$tmp = explode('/', $content_fieldname);
 			$content_fieldname = array_pop($tmp);
-			if ($datatype = ca_metadata_elements::getElementDatatype($content_fieldname)) {
+			$datatype = ca_metadata_elements::getElementDatatype($content_fieldname);
+			if ($datatype !== null) {
 				switch ($datatype) {
 					case __CA_ATTRIBUTE_VALUE_DATERANGE__:
 						return new DateRange($table, $content_fieldname);

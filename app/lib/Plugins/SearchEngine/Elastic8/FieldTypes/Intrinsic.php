@@ -40,6 +40,15 @@ use Zend_Search_Lucene_Index_Term;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/FieldType.php');
 
 class Intrinsic extends FieldType {
+	protected const FIELD_TYPE_TO_SUFFIX
+		= [
+			FT_BIT => self::SUFFIX_BOOLEAN,
+			FT_TIME => self::SUFFIX_TIME,
+			FT_NUMBER => self::SUFFIX_INTEGER,// TODO: Are there any FT_NUMBER which are not integer,
+			FT_TIMERANGE => self::SUFFIX_TIME_RANGE,
+			FT_TIMECODE => self::SUFFIX_TIME,
+		];
+	protected const TOKENIZE_INCOMPATIBLE = [self::SUFFIX_BOOLEAN, self::SUFFIX_INTEGER, self::SUFFIX_TIME];
 
 	/**
 	 * Table name
@@ -74,19 +83,11 @@ class Intrinsic extends FieldType {
 		if ($content === '') {
 			$content = null;
 		}
-		$fieldTypeToSuffix = [
-			FT_BIT => self::SUFFIX_BOOLEAN,
-			FT_TIME => self::SUFFIX_TIME,
-			FT_NUMBER => self::SUFFIX_INTEGER,// TODO: Are there any FT_NUMBER which are not integer,
-			FT_TIMERANGE => self::SUFFIX_TIME_RANGE,
-			FT_TIMECODE => self::SUFFIX_TIME,
-		];
 
 		$instance = Datamodel::getInstance($this->getTableName(), true);
 		$field_info = Datamodel::getFieldInfo($this->getTableName(), $this->getFieldName());
-
 		$fieldType = $field_info['FIELD_TYPE'];
-		$suffix = $fieldTypeToSuffix[$fieldType] ?? self::SUFFIX_TEXT;
+		$suffix = self::FIELD_TYPE_TO_SUFFIX[$fieldType] ?? self::SUFFIX_TEXT;
 		switch ($fieldType) {
 			case (FT_BIT):
 				$content = (bool) $content;
@@ -109,7 +110,7 @@ class Intrinsic extends FieldType {
 				break;
 		}
 
-		if (in_array('DONT_TOKENIZE', $options, true)) {
+		if (in_array('DONT_TOKENIZE', $options, true) && !in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
 			$suffix = self::SUFFIX_KEYWORD;
 		}
 

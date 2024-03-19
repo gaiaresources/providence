@@ -1729,15 +1729,16 @@ if (!$for_current_value_reindex) {
 							}
 							
 							if ($vn_datatype == __CA_ATTRIBUTE_VALUE_LIST__) {
-								$v = [$vo_value->getDisplayValue(['output' => 'idno']), $vo_value->getDisplayValue(['output' => 'text'])];
+								$v = [$vo_value->getDisplayValue(['output' => 'idno']), $vo_value->getDisplayValue(['output' => 'text']), $vo_value->getDisplayValue(['output' => 'id'])];
 								$this->opo_engine->indexField($pn_subject_table_num, $field_num_prefix.$vn_element_id, $pn_row_id, $v, array_merge($pa_data, ['DONT_TOKENIZE' => false]));
 								$this->_genIndexInheritance($t_inheritance_subject ? $t_inheritance_subject : $pt_subject,
 									$t_inheritance_subject ? $pt_subject : null,
 									$field_num_prefix.$vn_element_id,
 									$pn_inheritance_subject_id ? $pn_inheritance_subject_id :
 										($pn_inheritance_subject_id ? $pn_inheritance_subject_id : $pn_row_id), $pn_row_id, $v, array_merge($pa_data, ['DONT_TOKENIZE' => 1]));
+							} else {
+								$va_tmp[$vo_attribute->getAttributeID()] = $vs_value_to_index;
 							}
-							$va_tmp[$vo_attribute->getAttributeID()] = $vs_value_to_index;
 						}
 					}
 				} else {
