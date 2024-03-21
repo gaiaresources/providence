@@ -41,22 +41,8 @@ class DateRange extends GenericElement {
 
 	public function getIndexingFragment($content, array $options): array {
 		$content = $this->serializeIfArray($content);
-		$return = [];
 
-		if (!is_array($parsed_content = caGetISODates($content, ['returnUnbounded' => true]))) {
-			return $return;
-		}
-
-		$rewritten_start = caRewriteDateForElasticSearch($parsed_content["start"], true);
-		$rewritten_end = caRewriteDateForElasticSearch($parsed_content["end"], false);
-
-		$return[$this->getDataTypeSuffix()] = $content;
-		$return[$this->getDataTypeSuffix(self::SUFFIX_DATE_RANGE)] = [
-			'gte' => $rewritten_start,
-			'lte' => $rewritten_end
-		];
-
-		return [$this->getKey() => $return];
+		return $this->parseElasticsearchDateRange($content);
 	}
 
 	public function getFiltersForPhraseQuery(Zend_Search_Lucene_Search_Query_Phrase $query): array {
@@ -202,4 +188,5 @@ class DateRange extends GenericElement {
 
 		return $return;
 	}
+
 }

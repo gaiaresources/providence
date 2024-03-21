@@ -34,6 +34,7 @@ namespace Elastic8\FieldTypes;
 
 use ca_metadata_elements;
 use Datamodel;
+use DateTime;
 use MemoryCacheInvalidParameterException;
 use Zend_Search_Lucene_Index_Term;
 
@@ -196,6 +197,46 @@ abstract class FieldType {
 		}
 
 		return $content;
+	}
+
+	/**
+	 * @param $content
+	 *
+	 * @return array|array[]
+	 */
+	public function parseElasticsearchDateRange($content, $historic = false): array {
+		$return = [];
+		$return[$this->getDataTypeSuffix()] = $content;
+		if ($historic) {
+			$dates = explode(' - ', $content);
+			$dates = array_map('trim', $dates);
+			$dates = array_map(function ($date) {
+				$timestamp_date = (new DateTime())->setTimestamp(caHistoricTimestampToUnixTimestamp($date));
+				$min_date = (new DateTime('-9999-01-01'))->getTimestamp();
+				$max_date = (new DateTime('9999-12-31'))->getTimestamp();
+				/** @var DateTime $actual_date */
+				$actual_date = max($min_date, min($timestamp_date, $max_date)); // Return the modified timestamp
+
+				return $actual_date->format("c");
+			}, $dates);
+
+			$rewritten_start = $dates[0] ?? null;
+			$rewritten_end = $dates[1] ?? $rewritten_start;
+		} else {
+			$parsed_content = caGetISODates($content, ['returnUnbounded' => true]);
+			$rewritten_start = caRewriteDateForElasticSearch($parsed_content["start"], true);
+			$rewritten_end = caRewriteDateForElasticSearch($parsed_content["end"], false);
+		}
+		if (!($rewritten_start) && !($rewritten_end)) {
+			return $return;
+		}
+
+		$return[$this->getDataTypeSuffix(FieldType::SUFFIX_DATE_RANGE)] = [
+			'gte' => $rewritten_start,
+			'lte' => $rewritten_end
+		];
+
+		return [$this->getKey() => $return];
 	}
 
 }
