@@ -47,6 +47,12 @@ class Intrinsic extends FieldType {
 			FT_NUMBER => self::SUFFIX_INTEGER,// TODO: Are there any FT_NUMBER which are not integer,
 			FT_TIMERANGE => self::SUFFIX_TIME_RANGE,
 			FT_TIMECODE => self::SUFFIX_TIME,
+			FT_DATE => self::SUFFIX_DATE,
+			FT_DATERANGE => self::SUFFIX_DATE_RANGE,
+			FT_DATETIME => self::SUFFIX_DATE,
+			FT_HISTORIC_DATE => self::SUFFIX_DATE,
+			FT_HISTORIC_DATERANGE => self::SUFFIX_DATE_RANGE,
+			FT_HISTORIC_DATETIME => self::SUFFIX_DATE,
 		];
 	protected const TOKENIZE_INCOMPATIBLE = [self::SUFFIX_BOOLEAN, self::SUFFIX_INTEGER, self::SUFFIX_TIME];
 
@@ -105,6 +111,14 @@ class Intrinsic extends FieldType {
 					$suffix = self::SUFFIX_KEYWORD;
 				}
 				break;
+			case (FT_DATE):
+			case (FT_DATERANGE):
+			case (FT_DATETIME):
+				return $this->parseElasticsearchDateRange($content);
+			case (FT_HISTORIC_DATE):
+			case (FT_HISTORIC_DATERANGE):
+			case (FT_HISTORIC_DATETIME):
+				return $this->parseElasticsearchDateRange($content, true);
 			default:
 				// noop (pm_content is just pm_content)
 				break;
