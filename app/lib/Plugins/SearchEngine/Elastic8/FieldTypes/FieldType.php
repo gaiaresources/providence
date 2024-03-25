@@ -62,7 +62,6 @@ abstract class FieldType {
 	protected const SUFFIX_CURRENCY = 'currency';
 	protected const SUFFIX_TIMESTAMP = 'ts';
 	protected const SUFFIX_SEPARATOR = '-';
-	protected const DEFAULT_SUFFIX = self::SUFFIX_TEXT;
 
 	/**
 	 * @param mixed $content
@@ -173,7 +172,7 @@ abstract class FieldType {
 
 	public function getDataTypeSuffix($suffix = null): string {
 		if (is_null($suffix)) {
-			$suffix = self::DEFAULT_SUFFIX;
+			$suffix = $this->getDefaultSuffix();
 		}
 
 		return $this->getSeparator() . $suffix;
@@ -237,6 +236,13 @@ abstract class FieldType {
 		];
 
 		return [$this->getKey() => $return];
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDefaultSuffix(): string {
+		return self::SUFFIX_TEXT;
 	}
 
 }

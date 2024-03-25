@@ -38,7 +38,6 @@ use Zend_Search_Lucene_Index_Term;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
 class Length extends GenericElement {
-	protected const DEFAULT_SUFFIX = self::SUFFIX_DOUBLE;
 
 	public function getIndexingFragment($content, array $options): array {
 		$content = $this->serializeIfArray($content);
@@ -89,5 +88,12 @@ class Length extends GenericElement {
 
 			return $term;
 		}
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDefaultSuffix(): string {
+		return self::SUFFIX_DOUBLE;
 	}
 }
