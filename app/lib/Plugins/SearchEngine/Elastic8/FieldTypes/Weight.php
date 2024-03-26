@@ -53,6 +53,7 @@ class Weight extends GenericElement {
 				$options);
 		} catch (Exception $e) {
 			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());
+
 			return [];
 		}
 	}
@@ -89,7 +90,15 @@ class Weight extends GenericElement {
 			);
 		} catch (Exception $e) {
 			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());
+
 			return $term;
 		}
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDefaultSuffix(): string {
+		return self::SUFFIX_FLOAT;
 	}
 }

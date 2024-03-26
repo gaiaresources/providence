@@ -35,11 +35,17 @@ namespace Elastic8\FieldTypes;
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 
 class ListItem extends GenericElement {
-	protected const DEFAULT_SUFFIX = self::SUFFIX_KEYWORD;
 
 	public function getIndexingFragment($content, array $options): array {
 		$content = $this->serializeIfArray($content);
 
 		return parent::getIndexingFragment($content, $options);
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDefaultSuffix(): string {
+		return self::SUFFIX_KEYWORD;
 	}
 }

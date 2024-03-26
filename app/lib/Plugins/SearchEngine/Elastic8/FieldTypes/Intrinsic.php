@@ -102,6 +102,7 @@ class Intrinsic extends FieldType {
 				if (in_array($this->getFieldName(), ['hier_left', 'hier_right'])) {
 					$suffix = self::SUFFIX_DOUBLE;
 				}
+			// intentionally falling through to the next cases here :(
 			case (FT_TIME):
 			case (FT_TIMERANGE):
 			case (FT_TIMECODE):

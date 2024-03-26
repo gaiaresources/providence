@@ -128,7 +128,7 @@ class Timestamp extends FieldType {
 		return $return;
 	}
 
-	public function getKey():string {
+	public function getKey(): string {
 		return str_replace('.', '/', $this->getFieldName());
 	}
 }
