@@ -260,27 +260,5 @@
         "copy_to" : "_all"
       }
     }
-  },
-  {
-    "created" : {
-      "match_mapping_type" : "*",
-      "match" : "created",
-      "mapping" : {
-        "type" : "date",
-        "copy_to" : "_all",
-        "format" : "date_optional_time"
-      }
-    }
-  },
-  {
-    "modified" : {
-      "match_mapping_type" : "*",
-      "match" : "modified",
-      "mapping" : {
-        "type" : "date",
-        "copy_to" : "_all",
-        "format" : "date_optional_time"
-      }
-    }
   }
 ]
