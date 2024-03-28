@@ -256,7 +256,7 @@ class Query {
 				// below we convert stuff multi term phrase query stuff like
 				// 		ca_objects.dimensions_width:"30 cm",
 				// which is parsed as two terms ... "30", and "cm" to one relatively simple term query
-				if ($multiterm_all_terms_same_field && ($first_term = array_shift($terms))) {
+				if ($multiterm_all_terms_same_field && ($first_term = reset($terms))) {
 					$first_term = caRewriteElasticSearchTermFieldSpec($first_term);
 					$fld = $this->getFieldTypeForTerm($first_term);
 					if (($fld instanceof FieldTypes\Length) || ($fld instanceof FieldTypes\Weight)
