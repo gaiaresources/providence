@@ -1269,7 +1269,7 @@ class ca_metadata_elements extends LabelableBaseModelWithAttributes implements I
 		$return_string = $options['returnAsString'] ?? false;
 
 		if(MemoryCache::contains($pm_element_code_or_id, 'ElementDataTypes')) {
-			$vm_return = (int)MemoryCache::fetch($pm_element_code_or_id, 'ElementDataTypes');
+			$vm_return = MemoryCache::fetch($pm_element_code_or_id, 'ElementDataTypes');
 			return $return_string ? self::dataTypeAsString($vm_return) : $vm_return;
 		}
 
