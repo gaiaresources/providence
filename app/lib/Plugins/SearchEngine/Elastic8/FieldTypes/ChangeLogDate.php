@@ -1,6 +1,6 @@
 <?php
 /** ---------------------------------------------------------------------
- * app/lib/Plugins/SearchEngine/Elastic8/FieldTypes/Timestamp.php :
+ * app/lib/Plugins/SearchEngine/Elastic8/FieldTypes/ChangeLogDate.php :
  * ----------------------------------------------------------------------
  * CollectiveAccess
  * Open-source collections management software
@@ -37,7 +37,7 @@ use Zend_Search_Lucene_Search_Query_Phrase;
 
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/FieldType.php');
 
-class Timestamp extends FieldType {
+class ChangeLogDate extends FieldType {
 
 	/**
 	 * Field name
@@ -63,11 +63,14 @@ class Timestamp extends FieldType {
 	 * @param mixed $content
 	 */
 	public function getIndexingFragment($content, array $options): array {
-		$content = $this->serializeIfArray($content);
+		$fragment = [];
+		foreach ($content as $key => $values) {
+			foreach ($values as $value) {
+				$fragment[$key][] = [$this->getDataTypeSuffix() => $value];
+			}
+		}
 
-		return [
-			$this->getKey() => $content
-		];
+		return $fragment;
 	}
 
 	public function getRewrittenTerm(Zend_Search_Lucene_Index_Term $term): Zend_Search_Lucene_Index_Term {
@@ -130,5 +133,12 @@ class Timestamp extends FieldType {
 
 	public function getKey(): string {
 		return str_replace('.', '/', $this->getFieldName());
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDefaultSuffix(): string {
+		return self::SUFFIX_DATE;
 	}
 }

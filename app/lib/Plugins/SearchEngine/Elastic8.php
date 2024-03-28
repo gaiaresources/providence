@@ -498,11 +498,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			// add changelog to index
 			$doc_content_buffer = array_merge(
 				$doc_content_buffer,
-				caGetChangeLogForElasticSearch(
-					$this->db,
-					Datamodel::getTableNum($table),
-					$primary_key
-				)
+				$this->getChangeLogFragment($table, $primary_key)
 			);
 
 			$bulk_params['body'][] = ['doc' => $doc_content_buffer, 'doc_as_upsert' => true];
@@ -523,11 +519,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				// add changelog to fragment
 				$fragment = array_merge(
 					$fragment,
-					caGetChangeLogForElasticSearch(
-						$this->db,
-						Datamodel::getTableNum($table),
-						$row_id
-					)
+					$this->getChangeLogFragment($table, $row_id)
 				);
 
 				$bulk_params['body'][] = ['doc' => $fragment, 'doc_as_upsert' => true];
@@ -586,6 +578,17 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		self::$update_content_buffer = [];
 		self::$delete_buffer = [];
 		self::$record_cache = [];
+	}
+
+	public function getChangeLogFragment($table_name, $row_id): array {
+		$content = caGetChangeLogForElasticSearch(
+			$this->db,
+			Datamodel::getTableNum($table_name),
+			$row_id
+		);
+
+		$field = new Elastic8\FieldTypes\ChangeLogDate('changeLog');
+		return $field->getIndexingFragment($content, []);
 	}
 
 	/**

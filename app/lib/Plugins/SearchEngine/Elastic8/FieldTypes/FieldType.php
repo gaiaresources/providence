@@ -112,11 +112,7 @@ abstract class FieldType {
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Numeric.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/GenericElement.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Intrinsic.php');
-		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Timestamp.php');
-
-		if ($table == 'created' || $table == 'modified') {
-			return new Timestamp($table);
-		}
+		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/ChangeLogDate.php');
 
 		// if this is an indexing field name, rewrite it
 		$could_be_attribute = true;

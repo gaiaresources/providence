@@ -53,7 +53,7 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Numeric
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Geocode.php');
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Integer.php');
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Timecode.php');
-require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Timestamp.php');
+require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/ChangeLogDate.php');
 
 class Query {
 
@@ -226,7 +226,7 @@ class Query {
 				$fld = $this->getFieldTypeForTerm($term);
 
 				$new_subquery = null;
-				if (($fld instanceof FieldTypes\DateRange) || ($fld instanceof FieldTypes\Timestamp)) {
+				if (($fld instanceof FieldTypes\DateRange) || ($fld instanceof FieldTypes\ChangeLogDate)) {
 					$new_subquery = null;
 					foreach ($fld->getFiltersForTerm($term) as $filter) {
 						$this->additional_filters[] = $filter;
@@ -296,7 +296,7 @@ class Query {
 							= ['geo_shape' => $fld->getFilterForPhraseQuery($subquery)];
 						break;
 					} elseif (($fld instanceof FieldTypes\DateRange)
-						|| ($fld instanceof FieldTypes\Timestamp)
+						|| ($fld instanceof FieldTypes\ChangeLogDate)
 					) {
 						$new_subquery = null;
 
