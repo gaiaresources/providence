@@ -379,10 +379,16 @@ class Query {
 		return FieldTypes\FieldType::getInstance($table, $fld);
 	}
 
+	/**
+	 * @throws MemoryCacheInvalidParameterException
+	 */
 	protected function getFilterQuery(): string {
 		$terms = [];
 		foreach ($this->getFilters() as $filter) {
 			$filter['field'] = str_replace('.', '\/', $filter['field']);
+			$term = new Zend_Search_Lucene_Index_Term($filter['value'], $filter['field']);
+			$fld = $this->getFieldTypeForTerm($term);
+			$filter = $fld->alterFilter($filter);
 			switch ($filter['operator']) {
 				case '=':
 					$terms[] = $filter['field'] . ':' . $filter['value'];

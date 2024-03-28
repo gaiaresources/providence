@@ -174,6 +174,10 @@ abstract class FieldType {
 		return $this->getSeparator() . $suffix;
 	}
 
+	public function alterFilter(array $filter): array {
+		return $filter;
+	}
+
 	protected function getSeparator(): string {
 		return self::SUFFIX_SEPARATOR;
 	}
