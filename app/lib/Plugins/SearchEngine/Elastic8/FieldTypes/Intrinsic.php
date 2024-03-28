@@ -193,7 +193,7 @@ class Intrinsic extends FieldType {
 				);
 			} else {
 				return new Zend_Search_Lucene_Index_Term(
-					'"' . $raw_term . '"', $term->field
+					'"' . $raw_term . '"', $term->field . '.'. $this->getDataTypeSuffix(static::SUFFIX_IDNO)
 				);
 			}
 		} else {
