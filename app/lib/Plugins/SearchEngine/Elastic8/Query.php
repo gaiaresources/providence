@@ -235,7 +235,7 @@ class Query {
 				} else {
 					if ($rewritten_term = $fld->getRewrittenTerm($term)) {
 						$new_subquery
-							= new Zend_Search_Lucene_Search_Query_Term($fld->getRewrittenTerm($term));
+							= new Zend_Search_Lucene_Search_Query_Term($rewritten_term);
 					}
 				}
 

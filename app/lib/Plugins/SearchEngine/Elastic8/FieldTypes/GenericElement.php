@@ -97,6 +97,7 @@ class GenericElement extends FieldType {
 				$term->field, '_exists_'
 			);
 		} else {
+			$term->field = $term->field ? $term->field . '.' . $this->getDataTypeSuffix() : null;
 			return $term;
 		}
 	}
