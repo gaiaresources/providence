@@ -193,7 +193,7 @@ class Intrinsic extends FieldType {
 				);
 			} else {
 				return new Zend_Search_Lucene_Index_Term(
-					'"' . $raw_term . '"', $term->field
+					'"' . $raw_term . '"', $term->field . '.'. $this->getDataTypeSuffix(static::SUFFIX_IDNO)
 				);
 			}
 		} else {
@@ -209,6 +209,47 @@ class Intrinsic extends FieldType {
 	 */
 	public function getKey(): string {
 		return $this->getTableName() . '/' . $this->getFieldName();
+	}
+
+	public function alterFilter(array $filter): array {
+		$instance = Datamodel::getInstance($this->getTableName(), true);
+		$field_info = Datamodel::getFieldInfo($this->getTableName(), $this->getFieldName());
+		$fieldType = $field_info['FIELD_TYPE'];
+		$suffix = self::FIELD_TYPE_TO_SUFFIX[$fieldType] ?? self::SUFFIX_TEXT;
+
+		switch ($fieldType) {
+			case (FT_BIT):
+				$filter['value'] = $filter['value'] ? 'true' : 'false';
+				break;
+			case (FT_NUMBER):
+				if (in_array($this->getFieldName(), ['hier_left', 'hier_right'])) {
+					$suffix = self::SUFFIX_DOUBLE;
+				}
+			// intentionally falling through to the next cases here :(
+			case (FT_TIME):
+			case (FT_TIMERANGE):
+			case (FT_TIMECODE):
+				if (isset($field_info['LIST_CODE']) && $suffix !== self::SUFFIX_DOUBLE) {
+					$suffix = self::SUFFIX_KEYWORD;
+				}
+				break;
+			default:
+				// noop
+				break;
+		}
+
+		if (!in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
+			$suffix = self::SUFFIX_KEYWORD;
+		}
+
+
+		if ($instance->getProperty('ID_NUMBERING_ID_FIELD') == $this->getFieldName()) {
+			$suffix = self::SUFFIX_IDNO;
+		}
+
+		$filter['field'] = $filter['field'] . '.' . $this->getDataTypeSuffix($suffix);
+
+		return $filter;
 	}
 
 }
