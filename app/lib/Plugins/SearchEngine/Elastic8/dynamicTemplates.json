@@ -63,8 +63,15 @@
       "match_mapping_type" : "*",
       "match" : "*-kw",
       "mapping" : {
-        "type" : "keyword",
-        "copy_to" : "_all"
+        "type" : "text",
+        "copy_to" : "_all",
+        "analyzer" : "keyword_lowercase",
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
       }
     }
   },
