@@ -227,7 +227,7 @@ abstract class FieldType {
 			$rewritten_end = caRewriteDateForElasticSearch($parsed_content["end"], false);
 		}
 		if (!($rewritten_start) && !($rewritten_end)) {
-			return $return;
+			return [$this->getKey() => $return];
 		}
 
 		$return[$this->getDataTypeSuffix(FieldType::SUFFIX_DATE_RANGE)] = [
