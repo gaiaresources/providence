@@ -85,7 +85,7 @@ class Currency extends GenericElement {
 		if (is_array($parsed_currency) && isset($parsed_currency['value_decimal1'])) {
 			return new Zend_Search_Lucene_Index_Term(
 				$parsed_currency['value_decimal1'],
-				$term->field
+				$term->field. '.' . $this->getDataTypeSuffix(self::SUFFIX_CURRENCY)
 			);
 		} else {
 			return $term;
@@ -103,7 +103,7 @@ class Currency extends GenericElement {
 			return [
 				new Zend_Search_Lucene_Index_Term(
 					$parsed_currency['value_longtext1'],
-					$this->getTableName() . '\\/' . $this->getElementCode() . '_currency'
+					$this->getTableName() . '\\/' . $this->getElementCode() . $this->getDataTypeSuffix(self::SUFFIX_TEXT)
 				)
 			];
 		} else {
