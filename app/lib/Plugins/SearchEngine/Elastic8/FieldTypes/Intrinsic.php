@@ -152,8 +152,7 @@ class Intrinsic extends FieldType {
 		}
 
 		if ($rel_type_id = caGetOption('relationship_type_id', $options)) {
-			$return[caGetRelationshipTypeCode($rel_type_id) . $this->getDataTypeSuffix(self::SUFFIX_KEYWORD)]
-				= $content;
+			$return[caGetRelationshipTypeCode($rel_type_id) ?: $rel_type_id] = $return;
 		}
 
 		return [$this->getKey() => $return];
