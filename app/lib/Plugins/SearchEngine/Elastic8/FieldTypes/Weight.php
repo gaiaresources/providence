@@ -86,7 +86,7 @@ class Weight extends GenericElement {
 		try {
 			return new Zend_Search_Lucene_Index_Term(
 				(float) caParseWeightDimension($term->text)->convertTo('KILOGRAM', 6, 'en_US'),
-				$term->field
+				$term->field . '.' . $this->getDataTypeSuffix()
 			);
 		} catch (Exception $e) {
 			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());

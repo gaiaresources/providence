@@ -81,7 +81,7 @@ class Length extends GenericElement {
 		try {
 			return new Zend_Search_Lucene_Index_Term(
 				(float) caParseLengthDimension($term->text)->convertTo('METER', 6, 'en_US'),
-				$term->field
+				$term->field . '.' . $this->getDataTypeSuffix()
 			);
 		} catch (Exception $e) {
 			self::getLogger()->logError(__METHOD__ . ': ' . $e->getMessage());
