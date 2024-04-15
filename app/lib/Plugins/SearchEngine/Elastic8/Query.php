@@ -140,9 +140,11 @@ class Query {
 					foreach ($subquery->getSubqueries() as $subsubquery) {
 						$new_subqueries[] = $this->rewriteSubquery($subsubquery);
 					}
-					$new_subquery = new Zend_Search_Lucene_Search_Query_Boolean($new_subqueries,
-						$subquery->getSigns());
-					$new_search_expression_parts[] = preg_replace('/^\+/u', '', (string) $new_subquery);
+					if (array_filter($new_subqueries)) {
+						$new_subquery = new Zend_Search_Lucene_Search_Query_Boolean($new_subqueries,
+							$subquery->getSigns());
+						$new_search_expression_parts[] = preg_replace('/^\+/u', '', (string) $new_subquery);
+					}
 					break;
 				default:
 					throw new Exception('Encountered unknown Zend query type in Elastic8\Query: '

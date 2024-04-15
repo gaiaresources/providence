@@ -114,6 +114,10 @@ abstract class FieldType {
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Intrinsic.php');
 		require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/ChangeLogDate.php');
 
+		if ($table == 'created' || $table == 'modified') {
+			return new ChangeLogDate($table);
+		}
+
 		// if this is an indexing field name, rewrite it
 		$could_be_attribute = true;
 		if (preg_match("/^([IA])[0-9]+$/", $content_fieldname)) {
