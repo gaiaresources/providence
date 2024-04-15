@@ -140,8 +140,7 @@ class Query {
 					foreach ($subquery->getSubqueries() as $subsubquery) {
 						$new_subqueries[] = $this->rewriteSubquery($subsubquery);
 					}
-					$new_subquery = new Zend_Search_Lucene_Search_Query_Boolean($new_subqueries,
-						$subquery->getSigns());
+					$new_subquery = join(' AND ', $new_subqueries);
 					$new_search_expression_parts[] = preg_replace('/^\+/u', '', (string) $new_subquery);
 					break;
 				default:
