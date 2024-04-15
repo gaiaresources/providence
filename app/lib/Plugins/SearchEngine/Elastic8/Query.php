@@ -362,7 +362,7 @@ class Query {
 				$additional_term_queries[] = new Zend_Search_Lucene_Search_Query_Term($additional_term);
 			}
 
-			return join(' AND ', $additional_term_queries);
+			return new Zend_Search_Lucene_Search_Query_Boolean($additional_term_queries);
 		} else {
 			return $original_subquery;
 		}
