@@ -99,7 +99,7 @@ class DateRange extends GenericElement {
 			];
 		}
 
-		$fld = str_replace('\\', '', $term->field);
+		$fld = str_replace('\\', '', $term->field) . '.' . $this->getDataTypeSuffix(FieldType::SUFFIX_DATE_RANGE);
 
 		switch ($qualifier) {
 			case '<':
@@ -141,46 +141,11 @@ class DateRange extends GenericElement {
 			case '#':
 			default:
 				$return[] = [
-					'bool' => [
-						'should' => [
-							[
-								'range' => [
-									$fld . '_start' => [
-										'gte' => $parsed_values['start'],
-										'lte' => $parsed_values['end'],
-									]
-								]
-							],
-							[
-								'range' => [
-									$fld . '_end' => [
-										'gte' => $parsed_values['start'],
-										'lte' => $parsed_values['end'],
-									],
-								]
-							],
-							[
-								'bool' => [
-									'must' => [
-										[
-											'range' => [
-												$fld . '_start' => [
-													'lte' => $parsed_values['start']
-												]
-											]
-										],
-										[
-											'range' => [
-												$fld . '_end' => [
-													'gte' => $parsed_values['end']
-												]
-											]
-										]
-									]
-								]
-							]
-						],
-						'minimum_should_match' => 1
+					'range' => [
+						$fld => [
+							'gte' => $parsed_values['start'],
+							'lte' => $parsed_values['end'],
+						]
 					]
 				];
 				break;
