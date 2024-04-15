@@ -103,7 +103,7 @@ class Currency extends GenericElement {
 			return [
 				new Zend_Search_Lucene_Index_Term(
 					$parsed_currency['value_longtext1'],
-					$this->getTableName() . '\\/' . $this->getElementCode() . $this->getDataTypeSuffix(self::SUFFIX_TEXT)
+					$this->getTableName() . '\\/' . $this->getElementCode() . '.' . $this->getDataTypeSuffix(self::SUFFIX_TEXT)
 				)
 			];
 		} else {
