@@ -4,7 +4,8 @@
       "match_mapping_type" : "*",
       "match" : "_all",
       "mapping" : {
-        "type" : "text"
+        "type" : "text",
+        "normalizer" : "lowercase_normalizer"
       }
     }
   },
@@ -18,7 +19,8 @@
         "fields" : {
           "keyword" : {
             "type" : "keyword",
-            "ignore_above" : 256
+            "ignore_above" : 256,
+            "normalizer" : "lowercase_normalizer"
           }
         }
       }
@@ -59,11 +61,12 @@
     }
   },
   {
-    "keys" : {
+    "keyword" : {
       "match_mapping_type" : "*",
       "match" : "*-kw",
       "mapping" : {
         "type" : "keyword",
+        "normalizer" : "lowercase_normalizer",
         "copy_to" : "_all"
       }
     }

@@ -53,6 +53,7 @@ class Intrinsic extends FieldType {
 			FT_HISTORIC_DATE => self::SUFFIX_DATE,
 			FT_HISTORIC_DATERANGE => self::SUFFIX_DATE_RANGE,
 			FT_HISTORIC_DATETIME => self::SUFFIX_DATE,
+			FT_TEXT => self::SUFFIX_TEXT,
 		];
 	protected const TOKENIZE_INCOMPATIBLE = [self::SUFFIX_BOOLEAN, self::SUFFIX_INTEGER, self::SUFFIX_TIME];
 
@@ -125,7 +126,7 @@ class Intrinsic extends FieldType {
 				break;
 		}
 
-		if (in_array('DONT_TOKENIZE', $options, true) && !in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
+		if (in_array('DONT_TOKENIZE', $options, true) && in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
 			$suffix = self::SUFFIX_KEYWORD;
 		}
 
@@ -187,7 +188,7 @@ class Intrinsic extends FieldType {
 				break;
 		}
 
-		if (!in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
+		if (in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
 			$suffix = self::SUFFIX_KEYWORD;
 		}
 
@@ -217,7 +218,7 @@ class Intrinsic extends FieldType {
 				);
 			} else {
 				return new Zend_Search_Lucene_Index_Term(
-					'"' . $raw_term . '"', $term->field . '.'. $this->getDataTypeSuffix(static::SUFFIX_IDNO)
+					'"' . $raw_term . '"', $term->field . '.' . $this->getDataTypeSuffix(static::SUFFIX_IDNO)
 				);
 			}
 		} else {
@@ -261,8 +262,8 @@ class Intrinsic extends FieldType {
 				// noop
 				break;
 		}
-
-		if (!in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
+		// TODO: Check for search indexing configuration to tokenize or not here
+		if (in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
 			$suffix = self::SUFFIX_KEYWORD;
 		}
 
