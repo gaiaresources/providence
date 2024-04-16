@@ -82,7 +82,7 @@ class ChangeLogDate extends FieldType {
 		$fld = null;
 		foreach ($query->getQueryTerms() as $term) {
 			$term = caRewriteElasticSearchTermFieldSpec($term);
-			$fld = str_replace('\\', '', $term->field);
+			$fld = str_replace('\\', '', $term->field) . '.' . $this->getDataTypeSuffix(FieldType::SUFFIX_DATE);
 			$terms[] = $term->text;
 		}
 
@@ -110,20 +110,13 @@ class ChangeLogDate extends FieldType {
 	public function getFiltersForTerm(Zend_Search_Lucene_Index_Term $term): array {
 		$return = [];
 		$parsed_values = caGetISODates($term->text);
-		$fld = str_replace('\\', '', $term->field);
-
-		$return[] = [
-			'range' => [
-				$fld => [
-					'lte' => $parsed_values['end'],
-				]
-			]
-		];
+		$fld = str_replace('\\', '', $term->field)  . '.' . $this->getDataTypeSuffix(FieldType::SUFFIX_DATE);
 
 		$return[] = [
 			'range' => [
 				$fld => [
 					'gte' => $parsed_values['start'],
+					'lte' => $parsed_values['end'],
 				]
 			]
 		];

@@ -152,8 +152,7 @@ class Intrinsic extends FieldType {
 		}
 
 		if ($rel_type_id = caGetOption('relationship_type_id', $options)) {
-			$return[caGetRelationshipTypeCode($rel_type_id) . $this->getDataTypeSuffix(self::SUFFIX_KEYWORD)]
-				= $content;
+			$return[caGetRelationshipTypeCode($rel_type_id) ?: $rel_type_id] = $return;
 		}
 
 		return [$this->getKey() => $return];
@@ -161,10 +160,35 @@ class Intrinsic extends FieldType {
 
 	public function getRewrittenTerm(Zend_Search_Lucene_Index_Term $term): Zend_Search_Lucene_Index_Term {
 		$instance = Datamodel::getInstance($this->getTableName(), true);
+		$field_info = Datamodel::getFieldInfo($this->getTableName(), $this->getFieldName());
+		$fieldType = $field_info['FIELD_TYPE'];
+		$suffix = self::FIELD_TYPE_TO_SUFFIX[$fieldType] ?? self::SUFFIX_TEXT;
 
 		$raw_term = $term->text;
 		if (mb_substr($raw_term, -1) == '|') {
 			$raw_term = mb_substr($raw_term, 0, mb_strlen($raw_term) - 1);
+		}
+
+		switch ($fieldType) {
+			case (FT_NUMBER):
+				if (in_array($this->getFieldName(), ['hier_left', 'hier_right'])) {
+					$suffix = self::SUFFIX_DOUBLE;
+				}
+			// intentionally falling through to the next cases here :(
+			case (FT_TIME):
+			case (FT_TIMERANGE):
+			case (FT_TIMECODE):
+				if (isset($field_info['LIST_CODE']) && $suffix !== self::SUFFIX_DOUBLE) {
+					$suffix = self::SUFFIX_KEYWORD;
+				}
+				break;
+			default:
+				// noop
+				break;
+		}
+
+		if (!in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
+			$suffix = self::SUFFIX_KEYWORD;
 		}
 
 		$field_components = explode('/', $term->field);
@@ -199,7 +223,7 @@ class Intrinsic extends FieldType {
 		} else {
 			return new Zend_Search_Lucene_Index_Term(
 				str_replace('/', '\\/', $raw_term),
-				$term->field
+				$term->field ? ($term->field . '.' . $this->getDataTypeSuffix($suffix)) : null
 			);
 		}
 	}

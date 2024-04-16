@@ -140,9 +140,11 @@ class Query {
 					foreach ($subquery->getSubqueries() as $subsubquery) {
 						$new_subqueries[] = $this->rewriteSubquery($subsubquery);
 					}
-					$new_subquery = new Zend_Search_Lucene_Search_Query_Boolean($new_subqueries,
-						$subquery->getSigns());
-					$new_search_expression_parts[] = preg_replace('/^\+/u', '', (string) $new_subquery);
+					if (array_filter($new_subqueries)) {
+						$new_subquery = new Zend_Search_Lucene_Search_Query_Boolean($new_subqueries,
+							$subquery->getSigns());
+						$new_search_expression_parts[] = preg_replace('/^\+/u', '', (string) $new_subquery);
+					}
 					break;
 				default:
 					throw new Exception('Encountered unknown Zend query type in Elastic8\Query: '
@@ -235,7 +237,7 @@ class Query {
 				} else {
 					if ($rewritten_term = $fld->getRewrittenTerm($term)) {
 						$new_subquery
-							= new Zend_Search_Lucene_Search_Query_Term($fld->getRewrittenTerm($term));
+							= new Zend_Search_Lucene_Search_Query_Term($rewritten_term);
 					}
 				}
 
@@ -362,7 +364,7 @@ class Query {
 				$additional_term_queries[] = new Zend_Search_Lucene_Search_Query_Term($additional_term);
 			}
 
-			return join(' AND ', $additional_term_queries);
+			return new Zend_Search_Lucene_Search_Query_Boolean($additional_term_queries);
 		} else {
 			return $original_subquery;
 		}
