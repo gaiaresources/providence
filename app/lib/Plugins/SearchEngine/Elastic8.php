@@ -143,6 +143,12 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'tokenizer' => 'whitespace',
 								'filter' => 'lowercase'
 							],
+						],
+						'normalizer' => [
+							'lowercase_normalizer' => [
+								'type' => 'custom',
+								'filter' => ['lowercase']
+							]
 						]
 					],
 					'index.mapping.total_fields.limit' => 20000,
@@ -279,9 +285,10 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	 * @throws AuthenticationException
 	 * @throws ServerResponseException
 	 * @throws Zend_Search_Lucene_Exception
+	 * @throws ApplicationException
 	 */
 	public function search(
-		int $subject_tablenum, string $search_expression, array $filters = [], $rewritten_query=null
+		int $subject_tablenum, string $search_expression, array $filters = [], $rewritten_query = null
 	): WLPlugSearchEngineElastic8Result {
 		Debug::msg("[ElasticSearch] incoming search query is: {$search_expression}");
 		Debug::msg("[ElasticSearch] incoming query filters are: " . print_r($filters, true));
@@ -305,7 +312,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'query_string' => [
 									'analyze_wildcard' => true,
 									'query' => $query_string,
-									'default_operator' => 'AND'
+									'default_operator' => 'AND',
+									'default_field' => '_all',
 								],
 							]
 						]
@@ -327,7 +335,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		try {
 			$results = $this->getClient()->search($search_params);
 		} catch (ClientResponseException $e) {
-			// TODO: log this at least
+			$this->getLogger()->logError($e->getMessage());
 			$results = ['hits' => ['hits' => []]];
 		}
 
@@ -588,6 +596,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		);
 
 		$field = new Elastic8\FieldTypes\ChangeLogDate('changeLog');
+
 		return $field->getIndexingFragment($content, []);
 	}
 
@@ -726,5 +735,17 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			'index' => array_map([$this, 'getIndexName'], $tables),
 			'ignore_missing' => true,
 		])->asBool();
+	}
+
+	/**
+	 * @throws ApplicationException
+	 */
+	private function getLogger() {
+		static $logger;
+		if (!$logger) {
+			$logger = caGetLogger();
+		}
+
+		return $logger;
 	}
 }
