@@ -4,8 +4,7 @@
       "match_mapping_type" : "*",
       "match" : "_all",
       "mapping" : {
-        "type" : "text",
-        "normalizer" : "lowercase_normalizer"
+        "type" : "text"
       }
     }
   },
