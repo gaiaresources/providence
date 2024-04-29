@@ -33,6 +33,7 @@
 include_once(__CA_LIB_DIR__ . '/Datamodel.php');
 include_once(__CA_LIB_DIR__ . '/Plugins/WLPlug.php');
 include_once(__CA_LIB_DIR__ . '/Plugins/IWLPlugSearchEngineResult.php');
+include_once(__CA_LIB_DIR__ . '/Search/Paginator.php');
 
 class WLPlugSearchEngineElastic8Result extends WLPlug implements IWLPlugSearchEngineResult {
 	private ?array $hits;
@@ -65,7 +66,7 @@ class WLPlugSearchEngineElastic8Result extends WLPlug implements IWLPlugSearchEn
 	}
 
 	public function numHits(): int {
-		return is_array($this->hits) ? sizeof($this->hits) : 0;
+		return Paginator::getInstance($this)->numHits();
 	}
 
 	public function nextHit(): bool {

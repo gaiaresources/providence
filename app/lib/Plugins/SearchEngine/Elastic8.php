@@ -53,6 +53,9 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/Query.php');
 
 class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSearchEngine {
 	protected const LOG_LEVEL_DEFAULT = 'WARNING';
+	/** @var int size is Java's 32bit int, for ElasticSearch */
+	protected const ES_MAX_INT = 2147483647;
+	protected const SCROLL_TIMEOUT = '1m';
 	protected array $index_content_buffer = [];
 
 	protected ?string $indexing_subject_tablenum = null;
@@ -132,7 +135,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			// TODO: Move away from plain index template in favour of composable templates when the ES PHP API supports them.
 			$indexSettings = [
 				'settings' => [
-					'max_result_window' => 2147483647,
+					'max_result_window' => self::ES_MAX_INT,
 					'analysis' => [
 						'analyzer' => [
 							'keyword_lowercase' => [
@@ -229,7 +232,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 	}
 
 	/**
-	 * Completely clear index (usually in preparation for a full reindex)
+	 * Completely clear index for a CA table (usually in preparation for a full reindex)
 	 *
 	 * @param int|null $table_num
 	 *
@@ -298,12 +301,70 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 		Debug::msg("[ElasticSearch] actual search query sent to ES: {$query_string}");
 
+		$limit = self::ES_MAX_INT;
+		$sort_direction = 'asc';
+		$tableName = Datamodel::getTableName($subject_tablenum);
+		$format = $this->getOption('outputFormat');
+		$request = AppController::getInstance()->getRequest();
+		$context = ResultContext::getResultContextForLastFind($request, $subject_tablenum);
+		$start = 0;
+		$isExport = in_array($format, ['EXPORT', 'LABELS', 'SET']);
+		$page = null;
+		if (!$isExport) {
+			$start = $request->getParameter('start', pInteger) ?: $this->getOption('start');
+			$context_page = $context->searchExpressionHasChanged() ? null : $context->getCurrentResultsPageNumber();
+			$page = $request->getParameter('page', pInteger) ?: $context_page;
+			$page = $page ?: 1;
+			$limit = $context->getItemsPerPage();
+			$limit = $request->getParameter('limit', pInteger) ?: $limit;
+			$limit = $limit ?: $this->getOption('limit');
+			// In case we don't have a limit, set a friendly one here.
+			$limit = $limit ?: $request->config->get('items_per_page_default_for_' . $tableName . '_search');
+			// TODO Store and retrieve the scroll_id instead of just returning all results.
+		}
+		$sort = $request->getParameter('sort', pString) ?: $context->getCurrentSort();
+		$sort = $sort ?: $this->getOption('sort');
+		$sort_direction = $request->getParameter('direction', pString) === 'desc' ? 'desc' : $sort_direction;
+		$sort_direction = $sort_direction ?: $context->getCurrentSortDirection();
+		if ($page) {
+			$start = $limit * ($page - 1);
+		}
+		Debug::msg("[ElasticSearch] Start: $start Page: $page Limit: $limit");
+		// If we're going to sort by preferred labels, just let the 'name' case handle it.
+		if (preg_match("/$tableName\.preferred_labels/", $sort)) {
+			$sort = 'name';
+		}
+		// relevance, idno and name come from QuickSearch select box.
+		switch ($sort) {
+			case 'relevance':
+			case '_natural':
+				$sort = '_score';
+				break;
+			case 'idno':
+				$sort = sprintf('%s.%s.sortable',
+					$tableName,
+					Datamodel::getTableProperty($subject_tablenum, 'ID_NUMBERING_SORT_FIELD')
+				);
+				break;
+			case 'name':
+				$vs_label_table = Datamodel::getTableProperty($subject_tablenum, 'LABEL_TABLE_NAME');
+				$sort = sprintf('%s.%s.sortable',
+					Datamodel::getTableName($vs_label_table),
+					Datamodel::getTableProperty($vs_label_table, 'LABEL_SORT_FIELD')
+				);
+				break;
+			default:
+				$sort = $sort ? $sort . '.sortable' : null;
+				break;
+		}
 		$search_params = [
 			'index' => $this->getIndexName($subject_tablenum),
+//			'scroll' => self::SCROLL_TIMEOUT,
 			'body' => [
-				// we do paging in our code
-				'from' => 0,
-				'size' => 2147483647, // size is Java's 32bit int, for ElasticSearch
+				// TODO: Sort PROVES-97
+				//$sort ? sprintf('%s:%s', preg_replace('/^(\w+)\./', '\1/', $sort), $sort_direction) : null,
+				'from' => $start,
+				'size' => $limit,
 				'_source' => false,
 				'query' => [
 					'bool' => [
@@ -336,10 +397,16 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			$results = $this->getClient()->search($search_params);
 		} catch (ClientResponseException $e) {
 			$this->getLogger()->logError($e->getMessage());
-			$results = ['hits' => ['hits' => []]];
+			$results = ['hits' => ['hits' => [], ['total' => ['value' => 0]]]];
 		}
+		$hits = $results['hits']['hits'];
+		$hits = array_combine(array_column($hits, '_id'), $hits);
+		dump($hits);
+		$result = new WLPlugSearchEngineElastic8Result($hits, $subject_tablenum);
+		Paginator::getInstance($result)->setNumHits($results['hits']['total']['value'] ?? 0);
+		$context->setParameter('scroll_id', $results['_scroll_id']);
 
-		return new WLPlugSearchEngineElastic8Result($results['hits']['hits'], $subject_tablenum);
+		return $result;
 	}
 
 	/**
