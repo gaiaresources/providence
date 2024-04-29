@@ -401,7 +401,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		}
 		$hits = $results['hits']['hits'];
 		$hits = array_combine(array_column($hits, '_id'), $hits);
-		dump($hits);
 		$result = new WLPlugSearchEngineElastic8Result($hits, $subject_tablenum);
 		Paginator::getInstance($result)->setNumHits($results['hits']['total']['value'] ?? 0);
 		$context->setParameter('scroll_id', $results['_scroll_id']);
