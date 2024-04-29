@@ -66,14 +66,17 @@
 			$vs_table = $va_table[0]; $vs_type = (isset($va_table[1])) ? $va_table[1] : null;
 			
 			$o_res = $this->getVar($vs_target.'_results');
+			$vn_num_hits = $this->getVar($vs_target.'_count');
 			$vs_target_id = str_replace("/", "-", $vs_target);
 
-			if ($o_res->numHits() >= 1) { 
+			if ($vn_num_hits >= 1) {
 ?>
 				<div class="quickSearchResultHeader rounded" >
 					<div class="quickSearchFullResultsLink"><?= caNavLink($this->request, caNavIcon(__CA_NAV_ICON_FULL_RESULTS__, 2)." "._t("Full Results"), null, $va_info['searchModule'], $va_info['searchController'], $va_info['searchAction'], array("search" => caEscapeSearchForURL($search), 'type_id' => $vs_type ? $vs_type : '*')); ?></div>
-					<a href='#' style="text-decoration:none; color:#333;" id='show<?= $vs_target_id; ?>' onclick='return caQuickSearchShowHideResults("show", "<?= $vs_target_id; ?>");'><?= $va_info['displayname']." (".$o_res->numHits().")"; ?> <?= caNavIcon(__CA_NAV_ICON_EXPAND__, '18px'); ?></a>
-					<a href='#' id='hide<?= $vs_target_id; ?>' style='display:none; text-decoration:none; color:#333;' onclick='return caQuickSearchShowHideResults("hide", "<?= $vs_target_id; ?>");'><?= $va_info['displayname']." (".$o_res->numHits().")"; ?> <?= caNavIcon(__CA_NAV_ICON_COLLAPSE__, '18px'); ?></a>
+					<a href='#' style="text-decoration:none; color:#333;" id='show<?= $vs_target_id; ?>' onclick='return caQuickSearchShowHideResults("show", "<?= $vs_target_id; ?>");'><?= $va_info['displayname']." (". $vn_num_hits
+						.")"; ?> <?= caNavIcon(__CA_NAV_ICON_EXPAND__, '18px'); ?></a>
+					<a href='#' id='hide<?= $vs_target_id; ?>' style='display:none; text-decoration:none; color:#333;' onclick='return caQuickSearchShowHideResults("hide", "<?= $vs_target_id; ?>");'><?= $va_info['displayname']." (". $vn_num_hits
+						.")"; ?> <?= caNavIcon(__CA_NAV_ICON_COLLAPSE__, '18px'); ?></a>
 				</div>
 				<div class="quickSearchHalfWidthResults" id='<?= $vs_target_id; ?>_results' style="display:none;">
 					<ul class='quickSearchList'>
@@ -82,13 +85,13 @@
 						$va_type_list = $t_instance->getTypeList();
 						
 						$vb_show_labels = !(($vs_table === 'ca_objects') && ($t_instance->getAppConfig()->get('ca_objects_dont_use_labels')));
-						
+						$vn_shown = 0;
 						while($o_res->nextHit()) {
 							$vs_type = $t_instance->getTypeCode((int)$o_res->get($vs_table.'.type_id'));
 							if (!($vs_template = $o_search_config->get($vs_table.'_'.$vs_type.'_quicksearch_result_display_template'))) {
 								$vs_template = $o_search_config->get($vs_table.'_quicksearch_result_display_template');
 							}
-							
+							$vn_shown ++;
 							if ($vs_template) {
 								print '<li class="quickSearchList">'.$o_res->getWithTemplate($vs_template)."</li>\n";
 							} else {
@@ -111,13 +114,17 @@
 									" {$vs_type_display}</li>\n";
 							}
 						}
+						if ($vn_shown < $vn_num_hits) {
+							print '<li class="quickSearchList">'. _t('And %1 more', $vn_num_hits-$vn_shown) . '&hellip;</li>';
+						}
+
 	?>
 					</ul>
 					<div class="quickSearchResultHide"><a href='#' id='hide<?= $vs_target_id; ?>' onclick='jQuery("#<?= $vs_target_id; ?>_results").slideUp(250); jQuery("#show<?= $vs_target_id; ?>").slideDown(1); jQuery("#hide<?= $vs_target_id; ?>").hide(); return false;'> <?= caNavIcon(__CA_NAV_ICON_COLLAPSE__, 2); ?></a></div>
 				</div>
 <?php	
 			} else {
-				print "<div class='quickSearchNoResults rounded'>".$va_info['displayname']." (".$o_res->numHits().")"."</div>";
+				print "<div class='quickSearchNoResults rounded'>".$va_info['displayname']." (". $vn_num_hits .")"."</div>";
 			}
 	}
 ?>
