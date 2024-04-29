@@ -37,6 +37,8 @@
  include_once(__CA_LIB_DIR__.'/Datamodel.php');
  include_once(__CA_LIB_DIR__.'/Plugins/WLPlug.php');
  include_once(__CA_LIB_DIR__.'/Plugins/IWLPlugSearchEngineResult.php');
+ include_once(__CA_LIB_DIR__ . '/Search/Paginator.php');
+
 
 class WLPlugSearchEngineSqlSearch2Result extends WLPlug implements IWLPlugSearchEngineResult {
 	# -------------------------------------------------------
@@ -88,7 +90,7 @@ class WLPlugSearchEngineSqlSearch2Result extends WLPlug implements IWLPlugSearch
 	}
 	# -------------------------------------------------------
 	public function numHits() {
-		return $this->hits->getNumRecords();
+		return Paginator::getInstance()->numHits();
 	}
 	# -------------------------------------------------------
 	public function nextHit() {

@@ -78,7 +78,7 @@ class WLPlugSearchEngineCachedResult extends WLPlug implements IWLPlugSearchEngi
 	}
 	# -------------------------------------------------------
 	public function numHits() {
-		return is_array($this->opa_hits) ? sizeof($this->opa_hits) : 0;
+		return Paginator::getInstance()->numHits();
 	}
 	# -------------------------------------------------------
 	public function nextHit() {
