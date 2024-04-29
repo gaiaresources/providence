@@ -105,7 +105,8 @@
  			 	$vo_result->setOption('prefetch', $this->opn_num_results_per_item_type);	// get everything we need in one pass
  			 	$vo_result->setOption('dontPrefetchAttributes', true);						// don't bother trying to prefetch attributes as we don't need them
  				$this->view->setVar("{$vs_target}_results", $vo_result);
- 				
+ 				$this->view->setVar("{$vs_target}_count",  Paginator::getInstance()->numHits());
+
  				$va_found_item_ids = [];
  				while($vo_result->nextHit()) {
 					$va_found_item_ids[] = $vo_result->get($va_sorts['primary_key']);
