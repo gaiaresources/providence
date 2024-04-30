@@ -365,6 +365,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				//$sort ? sprintf('%s:%s', preg_replace('/^(\w+)\./', '\1/', $sort), $sort_direction) : null,
 				'from' => $start,
 				'size' => $limit,
+				'track_total_hits' => true,
 				'_source' => false,
 				'query' => [
 					'bool' => [
