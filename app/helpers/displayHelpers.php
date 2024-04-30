@@ -800,6 +800,9 @@ jQuery(document).ready(function() {
 			$vs_back_text = "<span class='resultLink'>"._t('Results')."</span>";
 		}
 
+		// Allows navigation through the current page of results (as stored in $va_found_ids)
+		// See discussion on https://github.com/gaiaresources/providence/pull/90
+
 		$vs_buf = '';
 		if (is_array($va_found_ids) && sizeof($va_found_ids)) {
 			$default_to_summary_view_conf = $po_request->config->getList("{$vs_table_name}_editor_defaults_to_summary_view");
@@ -822,7 +825,6 @@ jQuery(document).ready(function() {
 				}
 				TooltipManager::add(".prev.record", "Previous"); 
 			} else {
-				// DO something to load previous page of results
 				$vs_buf .=  '<span class="prev disabled">'.caNavIcon(__CA_NAV_ICON_SCROLL_LT__, 2).'</span>';
 			}
 
@@ -841,7 +843,6 @@ jQuery(document).ready(function() {
 				}
 				TooltipManager::add(".next.record", "Next");
 			} else {
-				// DO somehting to load next page of results
 				$vs_buf .=  '<span class="next disabled">'.caNavIcon(__CA_NAV_ICON_SCROLL_RT__, 2).'</span>';
 			}
 		} elseif ($vn_item_id) {
