@@ -241,6 +241,7 @@ class BaseSearchController extends BaseRefineableSearchController {
 
 			// Refresh result list in context to ensure it has the current "page" of results.
 			$this->opo_result_context->setResultList($vo_result->getPrimaryKeyValues());
+			$this->opo_result_context->setTotalCount($vo_result->numHits());
 			if($vb_is_new_search || $vb_criteria_have_changed || $vb_sort_has_changed || $this->type_restriction_has_changed) {
 //				$this->opo_result_context->setResultList($vo_result->getPrimaryKeyValues());
 				$this->opo_result_context->setParameter('availableVisualizationChecked', 0);

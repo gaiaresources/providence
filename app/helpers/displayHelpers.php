@@ -788,7 +788,9 @@ jQuery(document).ready(function() {
 		}
 
 		$va_found_ids 			= $po_result_context->getResultList();
+		$vn_total_count			= $po_result_context->getTotalCount();
 		$vn_current_pos			= $po_result_context->getIndexInResultList($vn_item_id);
+		$vn_total_pos			= (($po_result_context->getCurrentResultsPageNumber() - 1) * $po_result_context->getItemsPerPage()) + $vn_current_pos;
 		$vn_prev_id 			= $po_result_context->getPreviousID($vn_item_id);
 		$vn_next_id 			= $po_result_context->getNextID($vn_item_id);
 
@@ -820,12 +822,13 @@ jQuery(document).ready(function() {
 				}
 				TooltipManager::add(".prev.record", "Previous"); 
 			} else {
+				// DO something to load previous page of results
 				$vs_buf .=  '<span class="prev disabled">'.caNavIcon(__CA_NAV_ICON_SCROLL_LT__, 2).'</span>';
 			}
 
-			$vs_buf .= "<span class='resultCount'>".ResultContext::getResultsLinkForLastFind($po_request, $vs_table_name,  $vs_back_text, ''). " (".($vn_current_pos)."/".sizeof($va_found_ids).")</span>";
+			$vs_buf .= "<span class='resultCount'>".ResultContext::getResultsLinkForLastFind($po_request, $vs_table_name,  $vs_back_text, ''). " (".$vn_total_pos."/".$vn_total_count.")</span>";
 
-			if (!$vn_next_id && sizeof($va_found_ids)) { $vn_next_id = $va_found_ids[0]; }
+//			if (!$vn_next_id && sizeof($va_found_ids)) { $vn_next_id = $va_found_ids[0]; }
 			if ($vn_next_id > 0) {
 				if(
 					$po_request->user->canAccess($po_request->getModulePath(),$po_request->getController(),"Edit",array($vs_pk => $vn_next_id))
@@ -838,6 +841,7 @@ jQuery(document).ready(function() {
 				}
 				TooltipManager::add(".next.record", "Next");
 			} else {
+				// DO somehting to load next page of results
 				$vs_buf .=  '<span class="next disabled">'.caNavIcon(__CA_NAV_ICON_SCROLL_RT__, 2).'</span>';
 			}
 		} elseif ($vn_item_id) {

@@ -283,6 +283,29 @@ class ResultContext {
 	}
 	# ------------------------------------------------------------------
 	/**
+	 * Returns total count from the context's operation.
+	 *
+	 * @return int - total count
+	 */
+	public function getTotalCount() {
+		if ($va_context = $this->getContext()) {
+			return $va_context['total_count'] ?? null;
+		}
+		return null;
+	}
+	# ------------------------------------------------------------------
+	/**
+	 * Sets the total count for the current context.
+	 *
+	 * @param $pn_total_count - Total number of results found
+	 *
+	 * @return int - Total number of results found
+	 */
+	public function setTotalCount($pn_total_count) {
+		return $this->setContextValue('total_count', $pn_total_count);
+	}
+	# ------------------------------------------------------------------
+	/**
 	 * Returns number of items in the result list from the context's operation. 
 	 *
 	 * @return int
