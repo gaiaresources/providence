@@ -308,7 +308,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		$request = AppController::getInstance()->getRequest();
 		$context = ResultContext::getResultContextForLastFind($request, $subject_tablenum);
 		$start = 0;
-		$isExport = in_array($format, ['EXPORT', 'LABELS', 'SET']);
+		$isExport = in_array($format, ['EXPORT', 'LABELS'])
+			|| $request->getParameter('mode', pString) === 'from_results';
 		$page = null;
 		if (!$isExport) {
 			$start = $request->getParameter('start', pInteger) ?: $this->getOption('start');

@@ -766,16 +766,26 @@ class BaseFindController extends ActionController {
 			if ($vs_mode == 'from_checked') {
 				$va_row_ids = explode(";", $this->request->getParameter('item_ids', pString));
 			} else {
-				$va_row_ids = $this->opo_result_context->getResultList();
+					$vs_table_name = $this->opo_result_context->tableName();
+					$vs_new_search = $this->opo_result_context->getSearchExpression();
+					$vb_changed = false;
+					$vn_type_id = $this->opo_result_context->getTypeRestriction($vb_changed);
+					$pa_params = [];
+					if ($vn_type_id) {
+						$pa_params['restrictToType'] = $vn_type_id;
+					}
+					$vo_instance = caGetSearchInstance($vs_table_name, []);
+					$vo_results = $vo_instance->search($vs_new_search, $pa_params);
+					$va_row_ids = $vo_results->getPrimaryKeyValues();
+					$va_row_ids = array_values($va_row_ids);
 			}
-		
+
 			if (is_array($va_row_ids) && sizeof($va_row_ids)) {
 				$t_instance = Datamodel::getInstanceByTableName($this->ops_tablename, true);
 				$vs_set_name = $this->request->getParameter('set_name', pString);
 				if (!$vs_set_name) { $vs_set_name = $this->opo_result_context->getSearchExpression(); }
 		
 				$t_set = new ca_sets();
-				$t_set->setMode(ACCESS_WRITE);
 				if($vn_set_type_id = $this->getRequest()->getParameter('set_type_id', pInteger)) {
 					$t_set->set('type_id', $vn_set_type_id);
 				} else {
