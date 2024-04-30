@@ -238,7 +238,8 @@ class BaseSearchController extends BaseRefineableSearchController {
 				$this->view->setVar('show_type_id', $vn_show_type_id);
 				$vo_result->filterResult('ca_objects.type_id', $vn_show_type_id);
 			}
-	
+
+			// Refresh result list in context to ensure it has the current "page" of results.
 			$this->opo_result_context->setResultList($vo_result->getPrimaryKeyValues());
 			if($vb_is_new_search || $vb_criteria_have_changed || $vb_sort_has_changed || $this->type_restriction_has_changed) {
 //				$this->opo_result_context->setResultList($vo_result->getPrimaryKeyValues());
