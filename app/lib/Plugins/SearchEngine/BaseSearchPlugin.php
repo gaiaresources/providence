@@ -122,7 +122,7 @@ abstract class BaseSearchPlugin extends WLPlug implements IWLPlugSearchEngine {
 	 * @return bool True if plugin has capability
 	 */
 	public function can($capability) {
-		return $this->capabilities[$capability];
+		return $this->capabilities[$capability] ?? false;
 	}
 	# -------------------------------------------------------
 	# Options
