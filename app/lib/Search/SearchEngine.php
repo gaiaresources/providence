@@ -152,7 +152,7 @@ class SearchEngine extends SearchBase {
 		
 		if(!is_array($pa_options)) { $pa_options = array(); }
 		if(($vn_limit = caGetOption('limit', $pa_options, null, array('castTo' => 'int'))) < 0) { $vn_limit = null; }
-		$vb_engine_sort = $this->opo_engine->getOption('implements_sort');
+		$vb_engine_sort = $this->opo_engine->can('sort');
 		$vs_sort = caGetOption('sort', $pa_options, null);
 		$vs_sort_direction = strtolower(caGetOption('sortDirection', $pa_options, caGetOption('sort_direction', $pa_options, null)));
 		
