@@ -242,6 +242,10 @@ abstract class FieldType {
 		return [$this->getKey() => $return];
 	}
 
+	public function getSortKey() {
+		return $this->getKey() . '.' . $this->getDataTypeSuffix();
+	}
+
 	/**
 	 * @return string
 	 */

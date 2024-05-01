@@ -355,7 +355,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				);
 				break;
 			default:
-				$sort = $sort ? $sort . '.sortable' : null;
+				$sort = $query->getSortKey($sort);
 				break;
 		}
 		$search_params = [
@@ -363,7 +363,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 //			'scroll' => self::SCROLL_TIMEOUT,
 			'body' => [
 				// TODO: Sort PROVES-97
-				//$sort ? sprintf('%s:%s', preg_replace('/^(\w+)\./', '\1/', $sort), $sort_direction) : null,
+				'sort' => $sort ? sprintf('%s:%s', preg_replace('/^(\w+)\./', '\1/', $sort), $sort_direction) : null,
 				'from' => $start,
 				'size' => $limit,
 				'track_total_hits' => true,
