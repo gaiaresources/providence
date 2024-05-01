@@ -304,11 +304,10 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		$limit = self::ES_MAX_INT;
 		$sort_direction = 'asc';
 		$tableName = Datamodel::getTableName($subject_tablenum);
-		$format = $this->getOption('outputFormat');
 		$request = AppController::getInstance()->getRequest();
 		$context = ResultContext::getResultContextForLastFind($request, $subject_tablenum);
 		$start = 0;
-		$isExport = in_array($format, ['EXPORT', 'LABELS'])
+		$isExport = (bool)$request->getParameter('export_format', pString)
 			|| $request->getParameter('mode', pString) === 'from_results';
 		$page = null;
 		if (!$isExport) {
