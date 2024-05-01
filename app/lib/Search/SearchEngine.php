@@ -152,6 +152,7 @@ class SearchEngine extends SearchBase {
 		
 		if(!is_array($pa_options)) { $pa_options = array(); }
 		if(($vn_limit = caGetOption('limit', $pa_options, null, array('castTo' => 'int'))) < 0) { $vn_limit = null; }
+		$vb_engine_sort = $this->opo_engine->getOption('implements_sort');
 		$vs_sort = caGetOption('sort', $pa_options, null);
 		$vs_sort_direction = strtolower(caGetOption('sortDirection', $pa_options, caGetOption('sort_direction', $pa_options, null)));
 		
@@ -227,11 +228,12 @@ class SearchEngine extends SearchBase {
 				Debug::msg('SEARCH cache hit for '.$vs_cache_key);
 				$va_hits = $o_cache->getResults();
 				
-				
-				if ($vs_sort != '_natural') {
-					$va_hits = $this->sortHits($va_hits, $this->ops_tablename, $vs_sort, $vs_sort_direction);
-				} elseif (($vs_sort == '_natural') && ($vs_sort_direction == 'desc')) {
-					$va_hits = array_reverse($va_hits);
+				if (!$vb_engine_sort) {
+					if ($vs_sort != '_natural') {
+						$va_hits = $this->sortHits($va_hits, $this->ops_tablename, $vs_sort, $vs_sort_direction);
+					} elseif (($vs_sort == '_natural') && ($vs_sort_direction == 'desc')) {
+						$va_hits = array_reverse($va_hits);
+					}
 				}
 				$o_res = new WLPlugSearchEngineCachedResult($va_hits, $this->opn_tablenum);
 				$vb_from_cache = true;
@@ -361,11 +363,13 @@ class SearchEngine extends SearchBase {
 				$va_hits = $this->filterHitsByACL($va_hits, $this->opn_tablenum, $user_id, __CA_ACL_READONLY_ACCESS__);
 				if ($vn_limit > 0) { $va_hits = array_slice($va_hits, 0, $vn_limit); }
 			}
-			
-			if ($vs_sort && ($vs_sort !== '_natural')) {
-				$va_hits = $this->sortHits($va_hits, $t_table->tableName(), $vs_sort, $vs_sort_direction);
-			} elseif ((($vs_sort == '_natural') || !$vs_sort) && ($vs_sort_direction == 'desc')) {
-				$va_hits = array_reverse($va_hits);
+
+			if (!$vb_engine_sort) {
+				if ($vs_sort && ($vs_sort !== '_natural')) {
+					$va_hits = $this->sortHits($va_hits, $t_table->tableName(), $vs_sort, $vs_sort_direction);
+				} elseif ((($vs_sort == '_natural') || !$vs_sort) && ($vs_sort_direction == 'desc')) {
+					$va_hits = array_reverse($va_hits);
+				}
 			}
 			
 			$o_res = new WLPlugSearchEngineCachedResult($va_hits, $this->opn_tablenum);
