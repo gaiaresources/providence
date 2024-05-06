@@ -32,6 +32,7 @@
 
 namespace Elastic8\FieldTypes;
 
+use BaseModel;
 use Zend_Search_Lucene_Index_Term;
 
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/FieldType.php');
@@ -64,6 +65,10 @@ class GenericElement extends FieldType {
 		return $this->table_name;
 	}
 
+	public function getFieldName(): string {
+		return $this->getElementCode();
+	}
+
 	public function getIndexingFragment($content, array $options): array {
 		$content = $this->serializeIfArray($content);
 		// make sure empty strings are indexed as null, so ElasticSearch's
@@ -75,7 +80,7 @@ class GenericElement extends FieldType {
 		}
 
 		return [
-			$this->getKey() => [$this->getDataTypeSuffix() => $content]
+			$this->getKey() => [$this->getDataTypeSuffix($this->textToKeywordIfNecessary($this->getDefaultSuffix(), $options)) => $content]
 		];
 	}
 
@@ -107,5 +112,12 @@ class GenericElement extends FieldType {
 	 */
 	public function getKey(): string {
 		return $this->getTableName() . '/' . $this->getElementCode();
+	}
+	public function getSearchOptions(?BaseModel $instance): ?array {
+		$config = caGetSearchIndexingConfig();
+		$tableName = $instance->tableName();
+		$tableConfig = $config->getAssoc($tableName)[$tableName] ?? [];
+		$fieldConfig = $tableConfig['fields'] ?? [];
+		return $fieldConfig['_ca_attribute_' . $this->getElementCode()] ?? [];
 	}
 }

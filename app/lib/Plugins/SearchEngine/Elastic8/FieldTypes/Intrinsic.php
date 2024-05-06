@@ -126,9 +126,7 @@ class Intrinsic extends FieldType {
 				break;
 		}
 
-		if (in_array('DONT_TOKENIZE', $options, true) && in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
-			$suffix = self::SUFFIX_KEYWORD;
-		}
+		$suffix = $this->textToKeywordIfNecessary($suffix, $options);
 
 
 		if ($instance->getProperty('ID_NUMBERING_ID_FIELD') == $this->getFieldName()
@@ -187,10 +185,7 @@ class Intrinsic extends FieldType {
 				// noop
 				break;
 		}
-
-		if (in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
-			$suffix = self::SUFFIX_KEYWORD;
-		}
+		$suffix = $this->textToKeywordIfNecessary($suffix, $this->getSearchOptions($instance));
 
 		$field_components = explode('/', $term->field);
 
@@ -262,10 +257,7 @@ class Intrinsic extends FieldType {
 				// noop
 				break;
 		}
-		// TODO: Check for search indexing configuration to tokenize or not here
-		if (in_array($suffix, self::TOKENIZE_INCOMPATIBLE)) {
-			$suffix = self::SUFFIX_KEYWORD;
-		}
+		$suffix = $this->textToKeywordIfNecessary($suffix, $this->getSearchOptions($instance));
 
 
 		if ($instance->getProperty('ID_NUMBERING_ID_FIELD') == $this->getFieldName()) {
