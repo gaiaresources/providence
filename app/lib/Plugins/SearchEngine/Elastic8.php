@@ -219,8 +219,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 		$this->options = [
 			'start' => 0,
-			// TODO: change this to bigga numba
-			'limit' => 100000,
+			'limit' => self::ES_MAX_INT,
 			// maximum number of hits to return [default=100000],
 			'maxIndexingBufferSize' => $max_indexing_buffer_size,
 			// maximum number of indexed content items to accumulate before writing to the index,
