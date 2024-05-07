@@ -42,7 +42,6 @@ require_once(__CA_LIB_DIR__ . '/Attributes/Values/GeocodeAttributeValue.php');
 class Geocode extends GenericElement {
 
 	public function getIndexingFragment($content, array $options): array {
-		$content = $this->serializeIfArray($content);
 		if ($content === '') {
 			return parent::getIndexingFragment($content, $options);
 		}

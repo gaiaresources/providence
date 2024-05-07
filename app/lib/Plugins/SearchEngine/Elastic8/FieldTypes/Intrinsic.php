@@ -44,7 +44,7 @@ class Intrinsic extends FieldType {
 		= [
 			FT_BIT => self::SUFFIX_BOOLEAN,
 			FT_TIME => self::SUFFIX_TIME,
-			FT_NUMBER => self::SUFFIX_INTEGER,// TODO: Are there any FT_NUMBER which are not integer,
+			FT_NUMBER => self::SUFFIX_INTEGER,
 			FT_TIMERANGE => self::SUFFIX_TIME_RANGE,
 			FT_TIMECODE => self::SUFFIX_TIME,
 			FT_DATE => self::SUFFIX_DATE,
@@ -86,7 +86,6 @@ class Intrinsic extends FieldType {
 	 * @param mixed $content
 	 */
 	public function getIndexingFragment($content, array $options): array {
-		$content = $this->serializeIfArray($content);
 		if ($content === '') {
 			$content = null;
 		}

@@ -70,7 +70,6 @@ class GenericElement extends FieldType {
 	}
 
 	public function getIndexingFragment($content, array $options): array {
-		$content = $this->serializeIfArray($content);
 		// make sure empty strings are indexed as null, so ElasticSearch's
 		// _missing_ and _exists_ filters work as expected. If a field type
 		// needs to have them indexed differently, it can do so in its own

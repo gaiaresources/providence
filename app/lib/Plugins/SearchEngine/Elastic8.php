@@ -219,8 +219,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 		$this->options = [
 			'start' => 0,
-			// TODO: change this to bigga numba
-			'limit' => 100000,
+			'limit' => self::ES_MAX_INT,
 			// maximum number of hits to return [default=100000],
 			'maxIndexingBufferSize' => $max_indexing_buffer_size,
 			// maximum number of indexed content items to accumulate before writing to the index,
@@ -641,7 +640,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 							count($responses['items']), implode('; ', $errors));
 						$this->getClient()->getLogger()->error($message);
 						error_log($message);
-						// TODO: Do we just log this or actually throw the exception? Exception when > certain percentage of errors?
 						throw new ApplicationException($message);
 					}
 				}
@@ -697,27 +695,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 
 	public function engineName(): string {
 		return 'Elastic8';
-	}
-
-	/**
-	 * Tokenize string for indexing or search
-	 *
-	 * @param string $content
-	 * @param bool $for_search
-	 * @param int $index
-	 *
-	 * @return array Tokenized terms
-	 */
-	static public function tokenize(?string $content, ?bool $for_search = false, ?int $index = 0): array {
-		$content = preg_replace('![\']+!u', '',
-			$content);        // strip apostrophes for compatibility with SearchEngine class, which does the same to all search expressions
-		$words = [$content];
-
-		return $words;
-		// TODO: do we need to implement stopwords or can ElasticSearch do this?
-		$words = self::filterStopWords($words);
-
-		return $words;
 	}
 
 	/**
