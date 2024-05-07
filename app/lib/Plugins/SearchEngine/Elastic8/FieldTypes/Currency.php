@@ -39,7 +39,6 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Generic
 
 class Currency extends GenericElement {
 	public function getIndexingFragment($content, array $options): array {
-		$content = $this->serializeIfArray($content);
 		if ($content === '') {
 			return parent::getIndexingFragment($content, $options);
 		}

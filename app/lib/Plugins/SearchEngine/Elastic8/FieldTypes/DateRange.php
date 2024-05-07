@@ -40,8 +40,6 @@ require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/Generic
 class DateRange extends GenericElement {
 
 	public function getIndexingFragment($content, array $options): array {
-		$content = $this->serializeIfArray($content);
-
 		return $this->parseElasticsearchDateRange($content);
 	}
 

@@ -86,7 +86,6 @@ class Intrinsic extends FieldType {
 	 * @param mixed $content
 	 */
 	public function getIndexingFragment($content, array $options): array {
-		$content = $this->serializeIfArray($content);
 		if ($content === '') {
 			$content = null;
 		}

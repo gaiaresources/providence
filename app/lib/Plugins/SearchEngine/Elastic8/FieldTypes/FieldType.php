@@ -190,22 +190,6 @@ abstract class FieldType {
 	/**
 	 * @param $content
 	 *
-	 * @return string|int|float|bool
-	 * @deprecated TODO: This serialize call existed in the legacy codebase. Let's run a full reindex and confirm that
-	 *     this doesn't happen. If so then we can remove this method.
-	 */
-	public function serializeIfArray($content) {
-		if (is_array($content)) {
-			self::getLogger()->logError(_t('Unexpected data type for content %s', json_encode($content)));
-			$content = serialize($content);
-		}
-
-		return $content;
-	}
-
-	/**
-	 * @param $content
-	 *
 	 * @return array|array[]
 	 */
 	public function parseElasticsearchDateRange($content, $historic = false): array {
