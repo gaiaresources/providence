@@ -325,6 +325,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		}
 		$sort = $request->getParameter('sort', pString) ?: $context->getCurrentSort();
 		$sort = $sort ?: $this->getOption('sort');
+		// Sort by relevance if we don't have any sort set
+		$sort = $sort ?: '_natural';
 		$sort_direction = $request->getParameter('direction', pString) === 'desc' ? 'desc' : $sort_direction;
 		$sort_direction = $sort_direction ?: $context->getCurrentSortDirection();
 		if ($page) {
@@ -342,28 +344,30 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				$sort = '_score';
 				break;
 			case 'idno':
-				$sort = sprintf('%s.%s.sortable',
+				$sort = sprintf('%s.%s',
 					$tableName,
 					Datamodel::getTableProperty($subject_tablenum, 'ID_NUMBERING_SORT_FIELD')
 				);
+				$sort = $query->getSortKey($sort);
 				break;
 			case 'name':
 				$vs_label_table = Datamodel::getTableProperty($subject_tablenum, 'LABEL_TABLE_NAME');
-				$sort = sprintf('%s.%s.sortable',
+				$sort = sprintf('%s.%s',
 					Datamodel::getTableName($vs_label_table),
 					Datamodel::getTableProperty($vs_label_table, 'LABEL_SORT_FIELD')
 				);
+				$sort = $query->getSortKey($sort);
 				break;
 			default:
-				$sort = $sort ? $sort . '.sortable' : null;
+				$sort = $query->getSortKey($sort);
 				break;
 		}
+		$sort = preg_replace('/^(\w+)\./', '\1/', $sort);
 		$search_params = [
 			'index' => $this->getIndexName($subject_tablenum),
 //			'scroll' => self::SCROLL_TIMEOUT,
 			'body' => [
-				// TODO: Sort PROVES-97
-				//$sort ? sprintf('%s:%s', preg_replace('/^(\w+)\./', '\1/', $sort), $sort_direction) : null,
+				'sort' => $sort ? [$sort => ['order' => $sort_direction]] : null,
 				'from' => $start,
 				'size' => $limit,
 				'track_total_hits' => true,
@@ -399,14 +403,23 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			$results = $this->getClient()->search($search_params);
 		} catch (ClientResponseException $e) {
 			$this->getLogger()->logError($e->getMessage());
-			$results = ['hits' => ['hits' => [], ['total' => ['value' => 0]]]];
+			if (preg_match('!No mapping found for \[(\w+/[\w.\,-|]+)] in order to sort on!', $e->getMessage(), $matches)){
+				$search_params['body']['sort'] = [];
+				//retry search without sort parameters
+				$this->postError(1710, _t('Cannot sort results by [%1]. Reverting to sorting by relevance.', $matches[1]), _t('Search sorting.'));
+				$this->getLogger()->logInfo(_t('Retried search with default sort'));
+				$results = $this->getClient()->search($search_params);
+			} else {
+				$this->postError(1710, _t('Cannot perform search correctly and no results returned. Please consult the application error log for more information.', $e->getMessage()), _t('Querying ElasticSearch'));
+				$results = ['hits' => ['hits' => [], ['total' => ['value' => 0]]]];
+			}
 		}
+
 		$hits = $results['hits']['hits'];
 		$hits = array_combine(array_column($hits, '_id'), $hits);
 		$result = new WLPlugSearchEngineElastic8Result($hits, $subject_tablenum);
 		Paginator::getInstance($result)->setNumHits($results['hits']['total']['value'] ?? 0);
 		$context->setParameter('scroll_id', $results['_scroll_id']);
-
 		return $result;
 	}
 

@@ -114,6 +114,17 @@ class Query {
 	}
 
 	/**
+	 * @throws MemoryCacheInvalidParameterException
+	 */
+	public function getSortKey($sort): string {
+		$parts = explode(".", $sort);
+		$table = $parts[0];
+		$field_name = array_pop($parts);
+		$fld = FieldTypes\FieldType::getInstance($table, $field_name);
+		return $fld->getSortKey($table);
+	}
+
+	/**
 	 * Rewrite query
 	 *
 	 * @throws Exception

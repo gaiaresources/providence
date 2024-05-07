@@ -32,6 +32,7 @@
 
 namespace Elastic8\FieldTypes;
 
+use BaseModel;
 use ca_metadata_elements;
 use Datamodel;
 use DateTime;
@@ -242,6 +243,20 @@ abstract class FieldType {
 		return [$this->getKey() => $return];
 	}
 
+	public function getSortKey(string $table) {
+
+		$suffix = $this->getDefaultSuffix();
+		// Check if there's specific configuration for this field
+		$options = $this->getSearchOptions(Datamodel::getInstance($table, true));
+		$suffix = $this->textToKeywordIfNecessary($suffix, $options);
+		if (!$this->isSortable($suffix)) {
+			// Text fields have an automatically calculated .keyword field that can be used for sort
+			$suffix .= '.keyword';
+		}
+
+		return $this->getKey() . '.' . $this->getDataTypeSuffix($suffix);
+	}
+
 	/**
 	 * @return string
 	 */
@@ -249,4 +264,39 @@ abstract class FieldType {
 		return self::SUFFIX_TEXT;
 	}
 
+	/**
+	 * @param $suffix
+	 * @param array $options
+	 *
+	 * @return string
+	 */
+	public function textToKeywordIfNecessary($suffix, array $options): string {
+
+		if ($suffix === FieldType::SUFFIX_TEXT && in_array('DONT_TOKENIZE', $options, true)) {
+			$suffix = FieldType::SUFFIX_KEYWORD;
+		}
+
+		return $suffix;
+	}
+
+	private function isSortable(string $suffix): bool {
+		return !in_array($suffix, [self::SUFFIX_TEXT]);
+	}
+
+	/**
+	 * @param BaseModel|null $instance
+	 *
+	 * @return array|null
+	 */
+	public function getSearchOptions(?BaseModel $instance): ?array {
+		$return = [];
+		if ($instance) {
+			$return = $instance->getSearchIndexer()
+				->getFieldOptions($instance->tableName(), $instance->tableName(), $this->getFieldName());
+		}
+
+		return $return ?: [];
+	}
+
+	abstract public function getFieldName();
 }
