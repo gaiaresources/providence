@@ -640,7 +640,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 							count($responses['items']), implode('; ', $errors));
 						$this->getClient()->getLogger()->error($message);
 						error_log($message);
-						// TODO: Do we just log this or actually throw the exception? Exception when > certain percentage of errors?
 						throw new ApplicationException($message);
 					}
 				}
