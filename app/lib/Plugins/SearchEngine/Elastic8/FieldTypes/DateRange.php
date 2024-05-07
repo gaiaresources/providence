@@ -154,8 +154,4 @@ class DateRange extends GenericElement {
 		return $return;
 	}
 
-	public function getDefaultSuffix(): string {
-		return self::SUFFIX_DATE_RANGE;
-	}
-
 }
