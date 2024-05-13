@@ -326,6 +326,9 @@ class Query {
 						}
 					}
 				}
+				if (is_null($new_subquery)){
+					throw new \SearchException(_t('Failed to perform search when trying to rewrite subquery. Search expression was "%1" and Subquery was: %2.', $this->search_expression, json_encode($subquery)));
+				}
 
 				return $this->getSubqueryWithAdditionalTerms($new_subquery, $fld, $term);
 			case 'Zend_Search_Lucene_Search_Query_MultiTerm':
