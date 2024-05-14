@@ -33,6 +33,7 @@
 namespace Elastic8\FieldTypes;
 
 use BaseModel;
+use Datamodel;
 use Zend_Search_Lucene_Index_Term;
 
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/FieldType.php');
@@ -84,6 +85,7 @@ class GenericElement extends FieldType {
 	}
 
 	public function getRewrittenTerm(Zend_Search_Lucene_Index_Term $term): ?Zend_Search_Lucene_Index_Term {
+		$instance = Datamodel::getInstance($this->getTableName(), $this->getFieldName());
 		$tmp = explode('\\/', $term->field);
 		if (sizeof($tmp) == 3) {
 			unset($tmp[1]);
@@ -101,7 +103,8 @@ class GenericElement extends FieldType {
 				$term->field, '_exists_'
 			);
 		} else {
-			$term->field = $term->field ? $term->field . '.' . $this->getDataTypeSuffix() : null;
+			$suffix = $this->textToKeywordIfNecessary($this->getDefaultSuffix(), $this->getSearchOptions($instance));
+			$term->field = $term->field ? $term->field . '.' . $this->getDataTypeSuffix($suffix) : null;
 			return $term;
 		}
 	}
