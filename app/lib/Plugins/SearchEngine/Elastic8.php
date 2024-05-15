@@ -317,7 +317,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			$page = $page ?: 1;
 			$limit = $context->getItemsPerPage();
 			$limit = $request->getParameter('limit', pInteger) ?: $limit;
-			$limit = $limit ?: $this->getOption('limit');
 			// In case we don't have a limit, set a friendly one here.
 			$limit = $limit ?: $request->config->get('items_per_page_default_for_' . $tableName . '_search');
 			// TODO Store and retrieve the scroll_id instead of just returning all results.
