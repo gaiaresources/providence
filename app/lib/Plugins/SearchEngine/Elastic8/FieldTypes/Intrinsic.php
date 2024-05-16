@@ -38,6 +38,7 @@ use Datamodel;
 use Zend_Search_Lucene_Index_Term;
 
 require_once(__CA_LIB_DIR__ . '/Plugins/SearchEngine/Elastic8/FieldTypes/FieldType.php');
+require_once(__CA_LIB_DIR__.'/Configuration.php');
 
 class Intrinsic extends FieldType {
 	protected const FIELD_TYPE_TO_SUFFIX
@@ -139,7 +140,19 @@ class Intrinsic extends FieldType {
 			} else {
 				$values = explode(' ', $content);
 			}
-
+			$search_config = \Configuration::load(__CA_CONF_DIR__.'/search.conf');
+			if (is_array($va_rewrite_regexs = $search_config->get('rewrite_regexes'))) {
+				if (isset($va_rewrite_regexs[$this->table_name])
+					&& is_array($va_rewrite_regexs[$this->table_name])
+				) {
+					foreach ($va_rewrite_regexs[$this->table_name] as $vs_regex_name => $va_rewrite_regex) {
+						$values = array_map(function ($value) use ($va_rewrite_regex) {
+							return preg_replace("/" . caQuoteRegexDelimiter(trim($va_rewrite_regex[0]), '/') . "/",
+								trim($va_rewrite_regex[1]), $value);
+						}, $values);
+					}
+				}
+			}
 			$return = [
 				$this->getDataTypeSuffix(self::SUFFIX_IDNO) => $values
 			];
