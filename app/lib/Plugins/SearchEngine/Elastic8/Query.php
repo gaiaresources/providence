@@ -316,7 +316,8 @@ class Query {
 						foreach ($fld->getFiltersForPhraseQuery($subquery) as $filter) {
 							$this->additional_filters[] = $filter;
 						}
-						break;
+						// return without new subquery as this is applied through additional filters only.
+						return;
 					} else {
 						if ($rewritten_term = $fld->getRewrittenTerm($term)) {
 							if ($multiterm_all_terms_same_field) {
