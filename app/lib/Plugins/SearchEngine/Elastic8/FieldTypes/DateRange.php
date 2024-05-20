@@ -82,6 +82,10 @@ class DateRange extends GenericElement {
 		$return = [];
 
 		$parsed_values = caGetISODates($parse_date);
+		if (!$parsed_values['start'] && !$parsed_values['end']) {
+			throw new \ApplicationException('Unable to parse valid date for filter');
+		}
+
 		if (!$parsed_values['start']) {
 			$parsed_values['start'] = '-9999-01-01T00:00:00Z';
 		}
