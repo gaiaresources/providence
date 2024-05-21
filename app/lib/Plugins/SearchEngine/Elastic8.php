@@ -300,8 +300,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			$query = new Elastic8\Query($subject_tablenum, $search_expression, $rewritten_query, $filters);
 			$query_string = $query->getSearchExpression();
 		}
-		catch (Exception $e) {
-			$this->postError(1710, _t('Error building search expression. ' . $e->getMessage()), _t('Building ElasticSearch search expression'));
+		catch (ApplicationException $e) {
+			$this->postError(1710, $e->getMessage(), _t('Building ElasticSearch search expression'));
 			return new WLPlugSearchEngineElastic8Result([], $subject_tablenum);
 		}
 
