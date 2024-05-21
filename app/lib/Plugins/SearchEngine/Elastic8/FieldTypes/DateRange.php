@@ -80,10 +80,9 @@ class DateRange extends GenericElement {
 		}
 
 		$return = [];
-
 		$parsed_values = caGetISODates($parse_date);
-		if (!$parsed_values['start'] && !$parsed_values['end']) {
-			throw new \ApplicationException('Unable to parse valid date for filter');
+		if (is_null($parsed_values)) {
+			throw new \ApplicationException(_t('Unable to parse valid date "%1"for filter "%2". Please see <a href="https://providence.readthedocs.io/en/latest/dataModelling/metadata/dateTime.html">the documentation</a> for valid formats.', $term->text, $term->field));
 		}
 
 		if (!$parsed_values['start']) {
