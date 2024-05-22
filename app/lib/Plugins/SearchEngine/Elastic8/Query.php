@@ -83,6 +83,7 @@ class Query {
 	 * Query constructor.
 	 *
 	 * @throws Zend_Search_Lucene_Exception
+	 * @throws \ApplicationException
 	 */
 	public function __construct(
 		int $subject_table_num, string $search_expression, Zend_Search_Lucene_Search_Query_Boolean $rewritten_query,
