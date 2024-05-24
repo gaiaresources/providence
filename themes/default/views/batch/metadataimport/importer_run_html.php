@@ -166,6 +166,18 @@ print $vs_control_box = caFormControlBox(
 			</div>
 		</div>
 		<div class='bundleLabel'>
+			<span class="formLabelText"><?php print _t('Add to Set'); ?></span>
+			<div class="bundleContainer">
+				<div class="caLabelList">
+					<p>
+						<?php
+						print caHTMLTextInput('addToSet', array('id' => 'addToSet'), array('height' => 1));
+						?>
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class='bundleLabel'>
 			<span class="formLabelText"><?php print _t('Testing options'); ?></span> 
 			<div class="bundleContainer">
 				<div class="caLabelList" >

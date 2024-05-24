@@ -180,7 +180,8 @@
  				'inputFormat' => $this->request->getParameter("inputFormat", pString),
  				
  				'sourceUrl' => $this->request->getParameter('sourceUrl', pString),
- 				'sourceText' => $this->request->getParameter('sourceText', pString)
+ 				'sourceText' => $this->request->getParameter('sourceText', pString),
+ 				'addToSet' => $this->request->getParameter('addToSet', pString),
  			];
 
  			if ($vs_file_input = $this->request->getParameter("fileInput", pString)) {
