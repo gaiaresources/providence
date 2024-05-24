@@ -1402,7 +1402,8 @@ class BatchProcessor {
 		}
 		
 		$vs_log_dir = caGetOption('log', $pa_options, null); 
-		$vs_log_level = caGetOption('logLevel', $pa_options, "INFO"); 
+		$vs_log_level = caGetOption('logLevel', $pa_options, "INFO");
+		$vs_add_to_set = caGetOption('addToSet', $pa_options, null);
 		$vb_import_all_datasets =  caGetOption('importAllDatasets', $pa_options, false); 
 		
 		if ($limit_log_to = caGetOption('limitLogTo', $pa_options, null) && !is_array($limit_log_to)) {
@@ -1442,7 +1443,8 @@ class BatchProcessor {
 				'limitLogTo' => $limit_log_to, 
 				'dryRun' => $vb_dry_run, 
 				'importAllDatasets' => $vb_import_all_datasets,
-				'checkFileExtension' => $check_file_extension
+				'checkFileExtension' => $check_file_extension,
+				'addToSet' => $vs_add_to_set
 			])) === false) {
 				$va_errors['general'][] = array(
 					'idno' => "*",
