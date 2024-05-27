@@ -360,7 +360,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		$sort = $sort ?: '_natural';
 		$sort_direction = $request->getParameter('direction', pString) === 'desc' ? 'desc' : $sort_direction;
 		$sort_direction = $sort_direction ?: $context->getCurrentSortDirection();
-		dump($limit, $page);
 		if ($page) {
 			$start = $limit * ($page - 1);
 		}
