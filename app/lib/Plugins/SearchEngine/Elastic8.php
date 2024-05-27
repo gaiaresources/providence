@@ -137,6 +137,13 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 				'settings' => [
 					'max_result_window' => self::ES_MAX_INT,
 					'analysis' => [
+						'char_filter' => [
+							'punctuation_removal' => [
+								'type' => 'pattern_replace',
+								'pattern' => '[\\p{P}]',  // This pattern matches any punctuation character
+								'replacement' => '',
+							],
+						],
 						'analyzer' => [
 							'keyword_lowercase' => [
 								'tokenizer' => 'keyword',
@@ -146,13 +153,28 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'tokenizer' => 'whitespace',
 								'filter' => 'lowercase'
 							],
+							'custom_text_analyzer' => [
+								'type' => 'custom',
+								'tokenizer' => 'standard',
+								'char_filter' => ['punctuation_removal'],
+								'filter' => [
+									'lowercase',
+									'asciifolding',
+								],
+							],
 						],
 						'normalizer' => [
 							'lowercase_normalizer' => [
 								'type' => 'custom',
 								'filter' => ['lowercase']
-							]
-						]
+							],
+							'custom_normalizer' => [
+								'type' => 'custom',
+								'char_filter' => [],
+
+								'filter' => ['lowercase', 'asciifolding'],
+							],
+						],
 					],
 					'index.mapping.total_fields.limit' => 20000,
 				],
@@ -299,9 +321,9 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		try {
 			$query = new Elastic8\Query($subject_tablenum, $search_expression, $rewritten_query, $filters);
 			$query_string = $query->getSearchExpression();
-		}
-		catch (ApplicationException $e) {
+		} catch (ApplicationException $e) {
 			$this->postError(1710, $e->getMessage(), _t('Building ElasticSearch search expression'));
+
 			return new WLPlugSearchEngineElastic8Result([], $subject_tablenum);
 		}
 
@@ -314,7 +336,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		$request = AppController::getInstance()->getRequest();
 		$context = ResultContext::getResultContextForLastFind($request, $subject_tablenum);
 		$start = 0;
-		$isExport = (bool)$request->getParameter('export_format', pString)
+		$isExport = (bool) $request->getParameter('export_format', pString)
 			|| $request->getParameter('mode', pString) === 'from_results';
 		$page = null;
 		if (!$isExport) {
@@ -323,6 +345,10 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			$page = $request->getParameter('page', pInteger) ?: $context_page;
 			$page = $page ?: 1;
 			$limit = $context->getItemsPerPage();
+			// Work around issue where search context has been corrupted.
+			if ($limit === TRUE) {
+				$limit = null;
+			}
 			$limit = $request->getParameter('limit', pInteger) ?: $limit;
 			// In case we don't have a limit, set a friendly one here.
 			$limit = $limit ?: $request->config->get('items_per_page_default_for_' . $tableName . '_search');
@@ -334,6 +360,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		$sort = $sort ?: '_natural';
 		$sort_direction = $request->getParameter('direction', pString) === 'desc' ? 'desc' : $sort_direction;
 		$sort_direction = $sort_direction ?: $context->getCurrentSortDirection();
+		dump($limit, $page);
 		if ($page) {
 			$start = $limit * ($page - 1);
 		}
@@ -386,6 +413,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 									'query' => $query_string,
 									'default_operator' => 'AND',
 									'default_field' => '_all',
+									'analyzer' => 'custom_text_analyzer'
 								],
 							]
 						]
@@ -408,14 +436,20 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			$results = $this->getClient()->search($search_params);
 		} catch (ClientResponseException $e) {
 			$this->getLogger()->logError($e->getMessage());
-			if (preg_match('!No mapping found for \[(\w+/[\w.\,-|]+)] in order to sort on!', $e->getMessage(), $matches)){
+			if (preg_match('!No mapping found for \[(\w+/[\w.\,-|]+)] in order to sort on!', $e->getMessage(),
+				$matches)
+			) {
 				$search_params['body']['sort'] = [];
 				//retry search without sort parameters
-				$this->postError(1710, _t('Cannot sort results by [%1]. Reverting to sorting by relevance.', $matches[1]), _t('Search sorting.'));
+				$this->postError(1710,
+					_t('Cannot sort results by [%1]. Reverting to sorting by relevance.', $matches[1]),
+					_t('Search sorting.'));
 				$this->getLogger()->logInfo(_t('Retried search with default sort'));
 				$results = $this->getClient()->search($search_params);
 			} else {
-				$this->postError(1710, _t('Cannot perform search correctly and no results returned. Please consult the application error log for more information.', $e->getMessage()), _t('Querying ElasticSearch'));
+				$this->postError(1710,
+					_t('Cannot perform search correctly and no results returned. Please consult the application error log for more information.',
+						$e->getMessage()), _t('Querying ElasticSearch'));
 				$results = ['hits' => ['hits' => [], ['total' => ['value' => 0]]]];
 			}
 		}
@@ -425,6 +459,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		$result = new WLPlugSearchEngineElastic8Result($hits, $subject_tablenum);
 		Paginator::getInstance($result)->setNumHits($results['hits']['total']['value'] ?? 0);
 		$context->setParameter('scroll_id', $results['_scroll_id']);
+
 		return $result;
 	}
 
