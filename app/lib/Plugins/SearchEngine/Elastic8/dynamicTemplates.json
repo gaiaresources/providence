@@ -4,7 +4,8 @@
       "match_mapping_type" : "*",
       "match" : "_all",
       "mapping" : {
-        "type" : "text"
+        "type" : "text",
+        "analyzer": "custom_text_analyzer"
       }
     }
   },
@@ -14,6 +15,7 @@
       "match" : "*-s",
       "mapping" : {
         "type" : "text",
+        "analyzer": "custom_text_analyzer",
         "copy_to" : "_all",
         "fields" : {
           "keyword" : {

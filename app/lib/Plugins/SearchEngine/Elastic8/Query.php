@@ -318,7 +318,7 @@ class Query {
 							$this->additional_filters[] = $filter;
 						}
 						// return without new subquery as this is applied through additional filters only.
-						return;
+						return null;
 					} else {
 						if ($rewritten_term = $fld->getRewrittenTerm($term)) {
 							if ($multiterm_all_terms_same_field) {
