@@ -410,7 +410,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'query_string' => [
 									'analyze_wildcard' => true,
 									'query' => $query_string,
-									'default_operator' => 'AND',
+									'default_operator' => 'OR',
 									'default_field' => '_all',
 								],
 							]
