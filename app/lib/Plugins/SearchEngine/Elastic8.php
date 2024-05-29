@@ -140,7 +140,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 						'char_filter' => [
 							'punctuation_removal' => [
 								'type' => 'pattern_replace',
-								'pattern' => '[\\p{P}]',  // This pattern matches any punctuation character
+								'pattern' => $this->search_config->get('punctuation_tokenizer_regex'),
 								'replacement' => '',
 							],
 						],
@@ -412,7 +412,6 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 									'query' => $query_string,
 									'default_operator' => 'AND',
 									'default_field' => '_all',
-									'analyzer' => 'custom_text_analyzer'
 								],
 							]
 						]
