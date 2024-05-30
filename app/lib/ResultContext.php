@@ -231,19 +231,21 @@ class ResultContext {
 	 * @return integer - number of page; the first page is 1 (*not* zero). Returns 1 as default if no page has been set for the current context.
 	 */
 	public function getCurrentResultsPageNumber() {
-		if (($pn_page = intval($this->opo_request->getParameter('page', pString, ['forcePurify' => true]))) < 1) { 
-			// no page in request so fetch from context 
-			if ($va_context = $this->getContext()) {
-				$pn_page = $va_context['page'] ?? 1;
+		if ($this->opo_request) {
+			if (($pn_page = intval($this->opo_request->getParameter('page', pString, ['forcePurify' => true]))) < 1) {
+				// no page in request so fetch from context
+				if ($va_context = $this->getContext()) {
+					$pn_page = $va_context['page'] ?? 1;
+				}
+				if (!$pn_page) { $pn_page = 1; }
+				return $pn_page;
+			} else {
+				// page set by request param so set context
+				$this->setCurrentResultsPageNumber($pn_page);
+				return $pn_page;
 			}
-			if (!$pn_page) { $pn_page = 1; }
-			return $pn_page;
-		} else {
-			// page set by request param so set context
-			$this->setCurrentResultsPageNumber($pn_page);
-			return $pn_page;
 		}
-		
+
 		return 1;
 	}
 	# ------------------------------------------------------------------
@@ -346,13 +348,15 @@ class ResultContext {
 	 * @return int - number of items to display per results page, or null if no value is set
 	 */
 	public function getItemsPerPage() {
-		if (!($pn_items_per_page = $this->opo_request->getParameter('n', pInteger))) {
-			if ($va_context = $this->getContext()) {
-				return $va_context['num_items_per_page'] ?? null;
+		if ($this->opo_request) {
+			if (!($pn_items_per_page = $this->opo_request->getParameter('n', pInteger))) {
+				if ($va_context = $this->getContext()) {
+					return $va_context['num_items_per_page'] ?? null;
+				}
+			} else {
+				$this->setContextValue('num_items_per_page', $pn_items_per_page);
+				return $pn_items_per_page;
 			}
-		} else {
-			$this->setContextValue('num_items_per_page', $pn_items_per_page);
-			return $pn_items_per_page;
 		}
 		return null;
 	}
