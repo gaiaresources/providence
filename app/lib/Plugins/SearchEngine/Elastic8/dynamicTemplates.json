@@ -32,9 +32,8 @@
       "match_mapping_type" : "*",
       "match" : "*-idno",
       "mapping" : {
-        "type" : "text",
+        "type" : "search_as_you_type",
         "copy_to" : "_all",
-        "analyzer" : "keyword_lowercase",
         "fields" : {
           "keyword" : {
             "type" : "keyword",
