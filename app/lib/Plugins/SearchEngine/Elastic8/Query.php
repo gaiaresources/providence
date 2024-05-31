@@ -300,7 +300,7 @@ class Query {
 				}
 
 				// "normal" phrase rewriting below
-				foreach ($terms as $term) {
+				foreach ($terms as $i => $term) {
 					$term = caRewriteElasticSearchTermFieldSpec($term);
 					$fld = $this->getFieldTypeForTerm($term);
 
@@ -323,6 +323,9 @@ class Query {
 						if ($rewritten_term = $fld->getRewrittenTerm($term)) {
 							if ($multiterm_all_terms_same_field) {
 								$rewritten_term->text = preg_replace("/\"(.+)\"/u", "$1", $rewritten_term->text);
+								if ($i !== 0) {
+									$rewritten_term->field = $new_subquery->getTerms()[0]->field;
+								}
 							}
 							$new_subquery->addTerm($rewritten_term);
 						}
