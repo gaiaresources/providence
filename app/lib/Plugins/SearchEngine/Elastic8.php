@@ -144,6 +144,12 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'replacement' => '',
 							],
 						],
+						'tokenizer' => [
+							'custom_smart_tokenizer' => [
+								'type' => 'pattern',
+								'pattern' => $this->search_config->get('whitespace_tokenizer_regex'),
+							]
+						],
 						'analyzer' => [
 							'keyword_lowercase' => [
 								'tokenizer' => 'keyword',
@@ -155,7 +161,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 							],
 							'custom_text_analyzer' => [
 								'type' => 'custom',
-								'tokenizer' => 'standard',
+								'tokenizer' => 'custom_smart_tokenizer',
 								'char_filter' => ['punctuation_removal'],
 								'filter' => [
 									'lowercase',
@@ -175,6 +181,7 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'filter' => ['lowercase', 'asciifolding'],
 							],
 						],
+
 					],
 					'index.mapping.total_fields.limit' => 20000,
 				],
