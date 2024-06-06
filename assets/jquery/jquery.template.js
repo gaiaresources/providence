@@ -91,7 +91,7 @@ jQuery.fn.template = function( objValues ){
 		// values. Now, let's convert it into a jQuery DOM
 		// element and return it.
 		
-		return( jQuery( jQuery.trim(strHTML) ) );
+		return( jQuery.parseHTML( jQuery.trim(strHTML) ) );
  
 	} else {
  
