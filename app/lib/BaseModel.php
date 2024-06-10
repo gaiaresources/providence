@@ -9873,7 +9873,7 @@ $pa_options["display_form_field_tips"] = true;
 		if(!($va_rel_info = $this->_getRelationshipInfo($pm_rel_table_name_or_num))) { return null; }
 		
 		// Is this a many-one? (Eg. ca_objects <= ca_object_lots)
-		if(sizeof($va_rel_info['path']) == 2) {
+		if($va_rel_info['path'] && sizeof($va_rel_info['path']) == 2) {
 			if(isset($va_rel_info['rel_keys']['many_table']) && ($va_rel_info['rel_keys']['many_table'] === $this->tableName()) && ($key = $va_rel_info['rel_keys']['many_table_field'])) {
 				$this->set($key, null);
 				return $this->update();

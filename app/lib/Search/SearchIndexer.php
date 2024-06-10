@@ -3090,7 +3090,7 @@ if (!$for_current_value_reindex) {
 				}
 				// index counts?
 				foreach($va_counts as $vs_key => $vn_count) {
-					if ($pb_reindex_mode) {
+					if ($pb_reindex_mode || !$this->opo_engine->can('incremental_indexing')) {
 						$this->opo_engine->indexField($vn_related_table_num, 'COUNT', 0, [(int)$vn_count], array_merge($va_rel_field_info, ['relationship_type_id' => ($vs_key != '_total') ? $vs_key : 0]));
 						$this->_genIndexInheritance($pt_subject, $pt_rel, 'COUNT', $pn_subject_row_id, 0, [(int)$vn_count], array_merge($va_rel_field_info, ['relationship_type_id' => ($vs_key != '_total') ? $vs_key : 0]));
 					} else {
