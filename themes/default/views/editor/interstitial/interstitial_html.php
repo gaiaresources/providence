@@ -107,25 +107,8 @@
 						if (resp.status == 0) {
 							jQuery.jGrowl('<?php print addslashes(_t('Saved changes to')); ?> <em>' + resp.display + '</em>', { header: '<?php print addslashes(_t('Edit %1', $t_subject->getProperty('NAME_SINGULAR'))); ?>' }); 
 							jQuery("#<?php print $vs_form_name.$vs_field_name_prefix.$vs_n; ?>").parent().data('panel').hidePanel();
-							var primaryFieldName = '<?php print $t_left->primaryKey() ?>';
-							var relationBundle = <?php print "caRelationBundle".substr($vs_field_name_prefix, 0, strlen($vs_field_name_prefix)-1) ?>;
-							// Update the `initialValues` property with the `<select>` field's currently selected option
-							var relationSelectElementSelector = '#' + '<?php print substr($vs_field_name_prefix, 0, strlen($vs_field_name_prefix)-1); ?>' +
-								'_type_id' + resp.bundleDisplay.n;
-							var previouslySelectedValue;
-							if ($(relationSelectElementSelector).length > 0) {
-								previouslySelectedValue = $(relationSelectElementSelector).val();
-							}
-							var relationBundleValue = relationBundle.initialValues[resp.bundleDisplay.n][primaryFieldName];
-							var templateValues = Object.assign({ <?php print $t_left->primaryKey() ?>: relationBundleValue }, resp.bundleDisplay)
-							var displayContent = jQuery('#caRelationEditorPanel<?php print substr($vs_field_name_prefix, 0, strlen($vs_field_name_prefix)-1); ?> .caBundleDisplayTemplate')
-								.template(templateValues);
+							var displayContent = jQuery('#caRelationEditorPanel<?php print substr($vs_field_name_prefix, 0, strlen($vs_field_name_prefix)-1); ?> .caBundleDisplayTemplate').template(resp.bundleDisplay);
 							jQuery("#<?php print $vs_field_name_prefix; ?>BundleTemplateDisplay<?php print $this->getVar('n'); ?>").empty().append(displayContent);
-							relationBundle.onInitializeItem(templateValues.id, templateValues, relationBundle);
-							if ($(relationSelectElementSelector).length > 0) {
-								// Reload newly selected value
-								$(relationSelectElementSelector).val(previouslySelectedValue);
-							}
 							jQuery("input[name='form_timestamp']").val(resp['time']);
 						} else {
 							// error
