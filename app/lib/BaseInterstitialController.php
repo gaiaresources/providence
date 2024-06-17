@@ -204,9 +204,9 @@ class BaseInterstitialController extends BaseEditorController {
 		$vs_editor_table = $t_placement->getEditorType();
 		$vs_related_table = $t_subject->getOppositeTableName($t_placement->getEditorType());
 		$vs_template = caGetBundleDisplayTemplate($t_subject, $vs_related_table, $pa_bundle_settings);
-	
+
 		$qr_rel_items = caMakeSearchResult($t_subject->tableName(), array($t_subject->getPrimaryKey()));
-		
+		Paginator::getInstance()->setNumHits(1);
 		//
 		// Handle case of self relationships where we need to figure out which direction things are going in
 		// 		
