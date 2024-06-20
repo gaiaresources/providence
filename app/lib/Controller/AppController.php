@@ -49,11 +49,16 @@ class AppController {
 	private $opo_dispatcher;
 	
 	# -------------------------------------------------------
-	public static function getInstance(&$po_request=null, &$po_response=null, $dont_create=false) {
+	public static function getInstance(&$po_request=null, &$po_response=null, $dont_create=false, $force_create=false) {
 		global $g_app_controller;
+		if ($force_create) {
+			// Clear old instance, so we create new instance with given request and response.
+			$g_app_controller = null;
+		}
 		if (!$g_app_controller) {
 			return $dont_create ? null : $g_app_controller = new AppController($po_request, $po_response);
 		}
+
 		return $g_app_controller;
 	}
 	# -------------------------------------------------------
