@@ -276,7 +276,6 @@ require_once(__CA_LIB_DIR__."/Db.php");
 		$va_log_output = array();
 		$vs_blank_placeholder = caGetBlankLabelText($pn_table_num);
 		$o_tep = new TimeExpressionParser();
-		
 		if (!$options) { $options = []; }
 		$t_user = ($pn_user_id = caGetOption('user_id', $options, null)) ? new ca_users($pn_user_id) : null;
 		
@@ -509,7 +508,7 @@ require_once(__CA_LIB_DIR__."/Db.php");
 								// Convert list-based attributes to text
 								if ($vn_list_id = $t_element->get('list_id')) {
 									$t_list = new ca_lists();
-									$vs_attr_val = $t_list->getItemFromListForDisplayByItemID($vn_list_id, $vs_attr_val, true);
+									$vs_attr_val = $t_list->getItemFromListForDisplayByItemID($vn_list_id, $o_attr_val ? $o_attr_val->getDisplayValue() : $vs_attr_val, []);
 								}
 								
 								if (!$vs_attr_val) { 
@@ -1361,9 +1360,9 @@ require_once(__CA_LIB_DIR__."/Db.php");
 								// Convert list-based attributes to text
 								if ($vn_list_id = $t_element->get('list_id')) {
 									$t_list = new ca_lists();
-									$vs_attr_val = $t_list->getItemFromListForDisplayByItemID($vn_list_id, $vs_attr_val, true);
+									$vs_attr_val = $t_list->getItemFromListForDisplayByItemID($vn_list_id, $o_attr_val ? $o_attr_val->getDisplayValue() : $vs_attr_val, []);
 								}
-								
+
 								if (!$vs_attr_val) { 
 									$vs_attr_val = $vs_blank_placeholder;
 								}
