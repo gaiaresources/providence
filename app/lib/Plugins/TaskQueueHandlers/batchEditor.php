@@ -100,7 +100,7 @@ class WLPlugTaskQueueHandlerbatchEditor Extends WLPlug Implements IWLPlugTaskQue
 			)
 		));
 		
-		$o_app = AppController::getInstance($o_request, $o_response);
+		$o_app = AppController::getInstance($o_request, $o_response, false, true);
 	
 		$rs = RecordSelection::restore($parameters['record_selection'], ['request' => $o_request]);
 		if (!($t_subject = Datamodel::getInstance($rs->tableName()))) { return false; }
