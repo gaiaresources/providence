@@ -72,6 +72,15 @@ class ExpressionVisitor implements Visitor\Visit {
 			return implode($vs_glue, $va_args);
 		};
 
+		$custom = function($method, ...$args) {
+			if (is_callable($method)){
+				$ret = $method(...$args);
+			} else {
+				throw new Exception("Method $method does not exist and cannot be called.");
+			}
+			return $ret;
+		};
+
 		$this->opa_functions  = array(
 			'abs'			=> xcallable('abs'),
 			'ceil'			=> xcallable('ceil'),
@@ -106,7 +115,8 @@ class ExpressionVisitor implements Visitor\Visit {
 			'idnoUseCount'	=> xcallable('caIdnoUseCount'),
 			'dateIsRange'	=> xcallable('caDateIsRange'),
 			'fromUnixtime'	=> xcallable(function($arg) { return date('c', $arg); }),
-			'existsInList'	=> xcallable(function($arg1, $arg2) { return caItemExists($arg1, $arg2); })
+			'existsInList'	=> xcallable(function($arg1, $arg2) { return caItemExists($arg1, $arg2); }),
+			'custom'		=> xcallable($custom),
 		);
 
 		// Let application plugins add their own expression functions
