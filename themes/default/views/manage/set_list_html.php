@@ -117,8 +117,8 @@ if (!$this->request->isAjax()) {
 <?php
 				}
 ?>
-				<th class="<?= (($vs_current_sort == "item_count") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('# Items'), '', 'manage', 'Set', 'ListSets', array('sort' => 'item_count', 'direction' => ((($vs_current_sort == "item_count") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('Items'); ?>
 				</th>
 				<th class="<?= (($vs_current_sort == "lname") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
 					<?= caNavLink($this->request, _t('Owner'), '', 'manage', 'Set', 'ListSets', array('sort' => 'lname', 'direction' => ((($vs_current_sort == "lname") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
@@ -163,12 +163,9 @@ if (!$this->request->isAjax()) {
 ?>
 				<td align="center">
 					<div>
-<?php 	
-					if (($va_set['item_count'] > 0) && ($this->request->user->canDoAction('can_batch_edit_'.Datamodel::getTableName($va_set['table_num'])))) {
+<?php
+					if (($this->request->user->canDoAction('can_batch_edit_'.Datamodel::getTableName($va_set['table_num'])))) {
 						print caNavButton($this->request, __CA_NAV_ICON_BATCH_EDIT__, _t('Batch edit'), 'batchIcon', 'batch', 'Editor', 'Edit', array('id' => 'ca_sets:'.$va_set['set_id']), array(), array('icon_position' => __CA_NAV_ICON_ICON_POS_LEFT__, 'use_class' => 'list-button', 'no_background' => true, 'dont_show_content' => true));
-						print $va_set['item_count']; 
-					} else {
-						print $va_set['item_count']; 
 					}
 ?>
 					</div>
