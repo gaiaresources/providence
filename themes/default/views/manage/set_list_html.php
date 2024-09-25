@@ -102,35 +102,35 @@ if (!$this->request->isAjax()) {
 		<thead>
 			<tr>
 				<th class="list-header-nosort"> </th>
-				<th class="<?= (($vs_current_sort == "name") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('Name'), '', 'manage', 'Set', 'ListSets', array('sort' => 'name', 'direction' => ((($vs_current_sort == "name") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('Name'); ?>
 				</th>
-				<th class="<?= (($vs_current_sort == "set_content_type") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('Content'), '', 'manage', 'Set', 'ListSets', array('sort' => 'set_content_type', 'direction' => ((($vs_current_sort == "set_content_type") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('Content'); ?>
 				</th>
 <?php
 				if(!$vn_type_id){
 ?>
-					<th class="<?= (($vs_current_sort == "set_type") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-						<?= caNavLink($this->request, _t('Type'), '', 'manage', 'Set', 'ListSets', array('sort' => 'set_type', 'direction' => ((($vs_current_sort == "set_type") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+					<th class="list-header-nolink">
+						<?= _t('Type'); ?>
 					</th>
 <?php
 				}
 ?>
-				<th class="<?= (($vs_current_sort == "item_count") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('# Items'), '', 'manage', 'Set', 'ListSets', array('sort' => 'item_count', 'direction' => ((($vs_current_sort == "item_count") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('# Items'); ?>
 				</th>
-				<th class="<?= (($vs_current_sort == "lname") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('Owner'), '', 'manage', 'Set', 'ListSets', array('sort' => 'lname', 'direction' => ((($vs_current_sort == "lname") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('Owner'); ?>
 				</th>
-				<th class="<?= (($vs_current_sort == "access") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('Access'), '', 'manage', 'Set', 'ListSets', array('sort' => 'access', 'direction' => ((($vs_current_sort == "access") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('Access'); ?>
 				</th>
-				<th class="<?= (($vs_current_sort == "status") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('Status'), '', 'manage', 'Set', 'ListSets', array('sort' => 'status', 'direction' => ((($vs_current_sort == "status") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('Status'); ?>
 				</th>
-				<th class="<?= (($vs_current_sort == "created") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
-					<?= caNavLink($this->request, _t('Created'), '', 'manage', 'Set', 'ListSets', array('sort' => 'created', 'direction' => ((($vs_current_sort == "created") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				<th class="list-header-nolink">
+					<?= _t('Created'); ?>
 				</th>
 				<th class="{sorter: false} list-header-nosort listtableEdit"> </th>
 			</tr>
