@@ -108,17 +108,17 @@ class SetController extends ActionController {
 			switch($pn_mode) {
 				case 0:
 				default:
-					$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'access' => __CA_SET_EDIT_ACCESS__, 'setType' => $this->opn_list_set_type_id)), null, null, array());
+					$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'access' => __CA_SET_EDIT_ACCESS__, 'setType' => $this->opn_list_set_type_id, 'omitCounts' => true)), null, null, array());
 					break;
 				case 1:
-					$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'allUsers' => true, 'setType' => $this->opn_list_set_type_id)), null, null, array());
+					$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'allUsers' => true, 'setType' => $this->opn_list_set_type_id, 'omitCounts' => true)), null, null, array());
 					break;
 				case 2:
-					$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'publicUsers' => true, 'setType' => $this->opn_list_set_type_id)), null, null, array());
+					$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'publicUsers' => true, 'setType' => $this->opn_list_set_type_id, 'omitCounts' => true)), null, null, array());
 					break;
 			}
 		} else {
-			$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'access' => __CA_SET_EDIT_ACCESS__, 'setType' => $this->opn_list_set_type_id)), null, null, array());
+			$va_set_list = caExtractValuesByUserLocale($t_set->getSets(array('user_id' => $vn_user_id, 'access' => __CA_SET_EDIT_ACCESS__, 'setType' => $this->opn_list_set_type_id, 'omitCounts' => true)), null, null, array());
 		}
 		if (!($vs_sort 	= $o_result_context->getCurrentSort()) || (!in_array($vs_sort, $this->opa_sorts))) { 
 			$vs_sort = 'created'; 
