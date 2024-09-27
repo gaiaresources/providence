@@ -883,6 +883,373 @@ class ca_sets extends BundlableLabelableBaseModelWithAttributes implements IBund
 		}
 	}
 	# ------------------------------------------------------
+	# Set lists by SQL
+	# ------------------------------------------------------
+	/**
+	 * Replicates SetLists() but uses SQL to implement paging for performance reasons.
+	 *
+	 * @param array $pa_options Array of options. Supported options are:
+	 *			table - if set, list is restricted to sets that can contain the specified item. You can pass a table name or number. If omitted sets containing any content will be returned.
+	 *			setType - Restricts returned sets to those of the specified type. You can pass a type_id or list item code for the set type. If omitted sets are returned regardless of type.
+	 *			user_id - Restricts returned sets to those accessible by the current user. If omitted then all sets, regardless of access are returned.
+	 *			access - Restricts returned sets to those with at least the specified access level for the specified user. If user_id is omitted then this option has no effect. If user_id is set and this option is omitted, then sets where the user has at least read access will be returned.
+	 *			checkAccess - Restricts returned sets to those with an public access level with the specified values. If omitted sets are returned regardless of public access (ca_sets.access) value. Can be a single value or array if you wish to filter on multiple public access values.
+	 *			row_id = if set to an integer only sets containing the specified row are returned
+	 *			setIDsOnly = if set to true only set_id values are returned, in a simple array
+	 *			omitCounts =
+	 *			all =
+	 *			allUsers =
+	 *			publicUsers =
+	 *			name =
+	 *          byUser = return sets grouped by user with access. The array will be key'ed by sortable user name. Each entry includes a 'user' array with information about the user and a 'sets' array with the list of sets that user has access to. [Default is false]
+	 *          codes =
+	 *          includeItems =
+	 *          item_id = Get set that contains specified item_id
+	 *
+	 * @return array A list of sets keyed by set_id and then locale_id. Keys for the per-locale value array include: set_id, set_code, status, public access, owner user_id, content table_num, set type_id, set name, number of items in the set (item_count), set type name for display and set content type name for display. If setIDsOnly option is set then a simple array of set_id values is returned instead.
+	 */
+	public function getSetsBySQL($pa_options=null) {
+		if (!is_array($pa_options)) { $pa_options = array(); }
+		$pm_table_name_or_num = isset($pa_options['table']) ? $pa_options['table'] : null;
+		$pm_type = isset($pa_options['setType']) ? $pa_options['setType'] : null;
+		$pn_user_id = isset($pa_options['user_id']) ? (int)$pa_options['user_id'] : null;
+		$pn_access = isset($pa_options['access']) ? $pa_options['access'] : null;
+		$pb_set_ids_only = isset($pa_options['setIDsOnly']) ? (bool)$pa_options['setIDsOnly'] : false;
+		$pb_omit_counts = isset($pa_options['omitCounts']) ? (bool)$pa_options['omitCounts'] : false;
+		$ps_set_name = isset($pa_options['name']) ? $pa_options['name'] : null;
+		$pn_item_id = isset($pa_options['item_id']) ? (int)$pa_options['item_id'] : null;
+		$codes = caGetOption('codes', $pa_options, null);
+		$pn_start = (isset($pa_options['start']) && ((int)$pa_options['start'] > 0)) ? (int)$pa_options['start'] : 0;
+		$pn_limit = (isset($pa_options['limit']) && ((int)$pa_options['limit'] > 0)) ? (int)$pa_options['limit'] : null;
+		if ($codes && !is_array($codes)) { $codes = [$codes]; }
+
+		$include_items = caGetOption('includeItems', $pa_options, false);
+
+		$pb_by_user = caGetOption('byUser', $pa_options, null);
+
+		$pn_row_id = (isset($pa_options['row_id']) && ((int)$pa_options['row_id'])) ? (int)$pa_options['row_id'] : null;
+
+		$ps_sort = caGetOption('sort', $pa_options, null);
+		$ps_sort_direction = caGetOption('sortDirection', $pa_options, null);
+
+		$pa_public_access = isset($pa_options['checkAccess']) ? $pa_options['checkAccess'] : null;
+		if ($pa_public_access && is_numeric($pa_public_access) && !is_array($pa_public_access)) {
+			$pa_public_access = array($pa_public_access);
+		}
+		if (!is_array($pa_public_access)) { $pa_public_access = []; }
+		for($vn_i=0; $vn_i < sizeof($pa_public_access); $vn_i++) { $pa_public_access[$vn_i] = intval($pa_public_access[$vn_i]); }
+
+		$vn_table_num = null;
+		if ($pm_table_name_or_num && !($vn_table_num = $this->_getTableNum($pm_table_name_or_num))) { return null; }
+
+		$va_extra_joins = array();
+		$o_db = $this->getDb();
+
+		$va_sql_wheres = array("(cs.deleted = 0)");
+		$va_sql_params = array();
+		if ($vn_table_num) {
+			$va_sql_wheres[] = "(cs.table_num = ?)";
+			$va_sql_params[] = (int)$vn_table_num;
+		}
+
+		if(is_array($codes) && sizeof($codes)) {
+		    $va_sql_wheres[] = "(cs.set_code IN (?))";
+			$va_sql_params[] = $codes;
+		}
+
+		if ($pb_set_ids_only) {
+			$va_sql_selects = array('cs.set_id');
+		} else {
+			$va_sql_selects = array(
+				'cs.set_id', 'cs.set_code', 'cs.status', 'cs.access', 'cs.user_id', 'cs.table_num', 'cs.type_id', 'cs.parent_id',
+				'csl.label_id', 'csl.name', 'csl.locale_id', 'l.language', 'l.country', 'u.fname', 'u.lname', 'u.email', 'cs.`rank`'
+			);
+		}
+
+		if (isset($pa_options['all']) && $pa_options['all']) {
+			$va_sql_wheres[] = "(cs.user_id IN (SELECT user_id FROM ca_users WHERE userclass != 255))";
+		} elseif (isset($pa_options['allUsers']) && $pa_options['allUsers']) {
+			$va_sql_wheres[] = "(cs.user_id IN (SELECT user_id FROM ca_users WHERE userclass = 0))";
+		} elseif (isset($pa_options['publicUsers']) && $pa_options['publicUsers']) {
+			$va_sql_wheres[] = "(cs.user_id IN (SELECT user_id FROM ca_users WHERE userclass = 1))";
+		} else {
+			if ($pn_user_id && !$this->getAppConfig()->get('dont_enforce_access_control_for_ca_sets')) {
+				$t_user = Datamodel::getInstanceByTableName('ca_users', true);
+				$t_user->load($pn_user_id);
+
+				if ($t_user->getPrimaryKey()) {
+					$vs_access_sql = ($pn_access > 0) ? " AND (access >= ".intval($pn_access).")" : "";
+					if (is_array($va_groups = $t_user->getUserGroups()) && sizeof($va_groups)) {
+						$vs_sql = "(
+							(cs.user_id = ".intval($pn_user_id).") OR 
+							(cs.set_id IN (
+									SELECT set_id 
+									FROM ca_sets_x_user_groups 
+									WHERE 
+										group_id IN (".join(',', array_keys($va_groups)).") {$vs_access_sql}
+										AND
+										(
+											 (sdatetime IS NULL AND edatetime IS NULL)
+											 OR 
+											 (
+												sdatetime <= ".time()." AND edatetime >= ".time()."
+											 )
+										)
+								)
+							)
+						)";
+					} else {
+						$vs_sql = "(cs.user_id = {$pn_user_id})";
+					}
+
+					$vs_sql .= " OR (cs.set_id IN (
+											SELECT set_id 
+											FROM ca_sets_x_users 
+											WHERE 
+												user_id = {$pn_user_id} {$vs_access_sql}
+												AND
+												(
+													 (sdatetime IS NULL AND edatetime IS NULL)
+													 OR 
+													 (
+														sdatetime <= ".time()." AND edatetime >= ".time()."
+													 )
+												)
+										)
+									)";
+
+
+					$va_sql_wheres[] = "({$vs_sql})";
+				}
+			}
+		}
+
+		if (!is_null($pa_public_access) && is_array($pa_public_access) && sizeof($pa_public_access)) {
+			$va_sql_wheres[] = "(cs.access IN (?))";
+			$va_sql_params[] = $pa_public_access;
+		}
+
+		if (isset($pn_item_id) && ($pn_item_id > 0)) {
+			$va_extra_joins[] = "INNER JOIN ca_set_items AS csi ON cs.set_id = csi.set_id";
+		    $va_sql_wheres[] = "(csi.item_id IN (?))";
+			$va_sql_params[] = is_array($pn_item_id) ? $pn_item_id : [$pn_item_id];
+		}
+
+		if (isset($pm_type) && $pm_type) {
+			if(is_numeric($pm_type)){
+				$va_sql_wheres[] = "(cs.type_id = ?)";
+				$va_sql_params[] = (int)$pm_type;
+			}else{
+				# --- look up code of set type
+				$t_list = new ca_lists();
+				$vn_type_id = $t_list->getItemIDFromList("set_types", $pm_type);
+				if($vn_type_id){
+					$va_sql_wheres[] = "(cs.type_id = ?)";
+					$va_sql_params[] = (int)$vn_type_id;
+				}
+			}
+		}
+
+		if($va_restrict_to_types = caGetOption(['restrict_to_types', 'restrictToTypes'], $pa_options, false)) {
+			if(!is_array($va_restrict_to_types)) { $va_restrict_to_types = [$va_restrict_to_types]; }
+			$va_restrict_to_type_ids = array();
+			foreach($va_restrict_to_types as $vm_type) {
+				if(is_numeric($vm_type)){
+					$va_restrict_to_type_ids[] = (int)$vm_type;
+				} else {
+					# --- look up code of set type
+					$vn_type_id = caGetListItemID('set_types', $pm_type);
+					if($vn_type_id){
+						$va_restrict_to_type_ids[] = (int) $vn_type_id;
+					}
+				}
+			}
+
+			if(sizeof($va_restrict_to_type_ids)) {
+				$va_sql_wheres[] = "(cs.type_id IN (?))";
+				$va_sql_params[] = $va_restrict_to_type_ids;
+			}
+		}
+
+		if ($pn_row_id > 0) {
+			$va_sql_wheres[] = "((csi.row_id = ?) AND (csi.table_num = ?))";
+			$va_extra_joins[] = "INNER JOIN ca_set_items AS csi ON cs.set_id = csi.set_id";
+			$va_sql_selects[] = 'csi.item_id';
+			$va_sql_params[] = (int)$pn_row_id;
+			$va_sql_params[] = (int)$vn_table_num;
+		}
+
+		if ($ps_set_name) {
+			$va_sql_wheres[] = "(csl.name = ?)";
+			$va_sql_params[] = (string)$ps_set_name;
+		}
+
+		if (!$pb_set_ids_only && !$pb_omit_counts) {
+			$qr_table_nums = $o_db->query("
+				SELECT DISTINCT cs.table_num 
+				FROM ca_sets cs
+				INNER JOIN ca_set_items AS csi ON cs.set_id = csi.set_id
+				".(sizeof($va_sql_wheres) ? 'WHERE ' : '')."
+				".join(' AND ', $va_sql_wheres)."
+			", $va_sql_params);
+			$va_item_sql_params = $va_sql_params;
+			$va_item_wheres = $va_sql_wheres;
+
+			$query = "
+				SELECT ".join(', ', $va_sql_selects)."
+				FROM ca_sets cs
+				LEFT JOIN ca_set_labels AS csl ON cs.set_id = csl.set_id
+				LEFT JOIN ca_locales AS l ON csl.locale_id = l.locale_id
+				INNER JOIN ca_users AS u ON cs.user_id = u.user_id
+				".join("\n", $va_extra_joins)."
+				".(sizeof($va_sql_wheres) ? 'WHERE ' : '')."
+				".join(' AND ', $va_sql_wheres);
+			if (!empty($pn_limit)) {
+				$query .= ' ORDER BY cs.set_id DESC LIMIT ?, ?';
+				$va_sql_params[] = $pn_start;
+				$va_sql_params[] = $pn_limit;
+			}
+			// get sets
+			$qr_res = $o_db->query($query, $va_sql_params);
+			$va_sets = $va_unlocalised_sets = array();
+			$va_type_name_cache = array();
+
+			$qrx = caMakeSearchResult('ca_sets', $qr_res->getAllFieldValues('set_id'));
+			$creation_times = [];
+			while($qrx->nextHit()) {
+				$creation_times[$qrx->get('ca_sets.set_id')] = $qrx->get('ca_sets.created.timestamp');
+			}
+			$qr_res->seek(0);
+			$t_list = new ca_lists();
+			while($qr_res->nextRow()) {
+				$set_id = $qr_res->get('set_id');
+				$vn_table_num = $qr_res->get('table_num');
+				if (!isset($va_type_name_cache[$vn_table_num]) || !($vs_set_type = $va_type_name_cache[$vn_table_num])) {
+					$vs_set_type = $va_type_name_cache[$vn_table_num] = $this->getSetContentTypeName($vn_table_num, array('number' => 'plural'));
+				}
+
+				$vs_type = $t_list->getItemFromListForDisplayByItemID('set_types', $qr_res->get('type_id'));
+
+				$extras = [
+					'item_count' => (int)($va_item_counts[$set_id] ?? 0),
+					'set_content_type' => $vs_set_type,
+					'set_type' => $vs_type,
+					'created' => $creation_times[$set_id] ?? null
+				];
+
+				if ($include_items) {
+				    $extras['items'] = caExtractValuesByUserLocale(ca_sets::getItemsForSet($set_id, $pa_options));
+				}
+
+				$va_unlocalised_sets[$set_id] = array_merge($qr_res->getRow(), $extras);
+			}
+
+			// get set item counts
+			$va_item_counts = array();
+			while($qr_table_nums->nextRow()) {
+				$t_instance = Datamodel::getInstanceByTableNum($vn_table_num = (int)$qr_table_nums->get('table_num'), true);
+				if (!$t_instance) { continue; }
+
+				$va_item_wheres[] = "(cs.table_num = {$vn_table_num})";
+				if ($t_instance->hasField('deleted')) {
+					$va_item_wheres[] = "(t.deleted = 0)";
+				}
+				if (!is_null($pa_public_access) && is_array($pa_public_access) && sizeof($pa_public_access)) {
+					$va_item_wheres[] = "(t.access IN (?))";
+					$va_item_sql_params[] = $pa_public_access;
+				}
+
+				$va_item_wheres[] = "(cs.set_id IN (?))";
+				$va_item_sql_params[] = array_keys($va_unlocalised_sets);
+
+				$count_query = "
+					SELECT cs.set_id, count(distinct row_id) item_count
+					FROM ca_sets cs
+					INNER JOIN ca_set_items AS csi ON cs.set_id = csi.set_id
+					INNER JOIN ".$t_instance->tableName()." AS t ON t.".$t_instance->primaryKey()." = csi.row_id
+					".(sizeof($va_item_wheres) ? 'WHERE ' : '')."
+					".join(' AND ', $va_item_wheres)."
+					GROUP BY cs.set_id
+				";
+				$qr_res = $o_db->query($count_query, $va_item_sql_params);
+				while($qr_res->nextRow()) {
+					$va_unlocalised_sets[(int)$qr_res->get('set_id')]['item_count'] = (int)$qr_res->get('item_count');
+				}
+			}
+
+			foreach ($va_unlocalised_sets as $set_id => $set_info) {
+				$va_sets[$set_id][$set_info['locale_id']] = $set_info;
+			}
+
+			if ($pb_by_user) {
+			    $va_sets_by_user = [];
+			    $va_sets = caExtractValuesByUserLocale($va_sets);
+			    foreach($va_sets as $va_set) {
+			        $va_users = $this->getUsers(['row_id' => $va_set['set_id']]);
+
+			        $vs_user_key = strtolower(str_pad(substr($va_set['lname'], 0, 20), 20, ' ', STR_PAD_RIGHT).str_pad(substr($va_set['fname'], 0, 20), 20, ' ', STR_PAD_RIGHT).str_pad($va_set['user_id'], 10, '0', STR_PAD_LEFT));
+			        if (!isset($va_sets_by_user[$vs_user_key]['user'])) {
+			            $va_sets_by_user[$vs_user_key]['user'] = [
+			                'user_id' => $va_set['user_id'], 'user_name' => $va_set['user_name'],
+			                'fname' => $va_set['fname'], 'lname' => $va_set['lname'],
+			                'email' => $va_set['email']
+			            ];
+			        }
+			        $va_sets_by_user[$vs_user_key]['sets'][] = $va_set;
+
+			        foreach($va_users as $va_user) {
+			            $vs_user_key = strtolower(str_pad(substr($va_user['lname'], 0, 20), 20, ' ', STR_PAD_RIGHT).str_pad(substr($va_user['fname'], 0, 20), 20, ' ', STR_PAD_RIGHT).str_pad($va_user['user_id'], 10, '0', STR_PAD_LEFT));
+			            $va_sets_by_user[$vs_user_key]['user'] = $va_user;
+			            $va_sets_by_user[$vs_user_key]['sets'][] = $va_set;
+			        }
+			    }
+			    ksort($va_sets_by_user);
+			    return $va_sets_by_user;
+			}
+
+			return $va_sets;
+		} elseif ($pb_set_ids_only) {
+			// get sets
+			$qr_res = $o_db->query("
+				SELECT ".join(', ', $va_sql_selects)."
+				FROM ca_sets cs
+				INNER JOIN ca_users AS u ON cs.user_id = u.user_id
+				LEFT JOIN ca_set_labels AS csl ON cs.set_id = csl.set_id
+				".join("\n", $va_extra_joins)."
+				".(sizeof($va_sql_wheres) ? 'WHERE ' : '')."
+				".join(' AND ', $va_sql_wheres)."
+				ORDER BY csl.name
+			", $va_sql_params);
+			return $qr_res->getAllFieldValues("set_id");
+		} else {
+			$qr_res = $o_db->query("
+				SELECT ".join(', ', $va_sql_selects)."
+				FROM ca_sets cs
+				INNER JOIN ca_users AS u ON cs.user_id = u.user_id
+				LEFT JOIN ca_set_labels AS csl ON cs.set_id = csl.set_id
+				LEFT JOIN ca_locales AS l ON csl.locale_id = l.locale_id
+				".join("\n", $va_extra_joins)."
+				".(sizeof($va_sql_wheres) ? 'WHERE ' : '')."
+				".join(' AND ', $va_sql_wheres)."
+				ORDER BY csl.name
+			", $va_sql_params);
+			$t_list = new ca_lists();
+			$va_sets = array();
+			while($qr_res->nextRow()) {
+				$vn_table_num = $qr_res->get('table_num');
+				if (!isset($va_type_name_cache[$vn_table_num]) || !($vs_set_type = $va_type_name_cache[$vn_table_num])) {
+					$vs_set_type = $va_type_name_cache[$vn_table_num] = $this->getSetContentTypeName($vn_table_num, array('number' => 'plural'));
+				}
+
+				$vs_type = $t_list->getItemFromListForDisplayByItemID('set_types', $qr_res->get('type_id'));
+
+				$va_sets[$qr_res->get('set_id')][$qr_res->get('locale_id')] = array_merge($qr_res->getRow(), array('item_count' => intval($va_item_counts[$qr_res->get('set_id')] ?? null), 'set_content_type' => $vs_set_type, 'set_type' => $vs_type));
+			}
+
+			return $va_sets;
+		}
+	}
+	# ------------------------------------------------------
 	/**
 	 * Returns list of sets to which the item (as specified by $pm_table_name_or_num and $pn_row_id) can be associated and is not already part of.
 	 *
