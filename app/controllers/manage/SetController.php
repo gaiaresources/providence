@@ -122,8 +122,20 @@ class SetController extends ActionController {
 			$set_params['access'] = __CA_SET_EDIT_ACCESS__;
 		}
 
+		$sql_sorts = array("cs.set_id", "csl.name", "clil.name_singular", "cs.access", "u.lname", "cs.access", "cs.status", "cs.rank");
+		if (!($vs_sort 	= $o_result_context->getCurrentSort()) || (!in_array($vs_sort, $sql_sorts))) {
+			$vs_sort = 'cs.set_id';
+			$vs_sort_direction = 'desc';
+		} else {
+			$vs_sort_direction = $o_result_context->getCurrentSortDirection();
+		}
+		if($vb_sort_has_changed = $o_result_context->sortHasChanged()){
+			$this->opb_criteria_has_changed = true;
+		}
+		$this->view->setVar('current_sort', $vs_sort);
+		$this->view->setVar('current_sort_direction', $vs_sort_direction);
 		$vn_num_hits = sizeof($t_set->getSets(array_merge($set_params , ['setIDsOnly' => true])));
-		$va_set_list = caExtractValuesByUserLocale($t_set->getSetsBySQL(array_merge($set_params, ['start' => $this->opn_items_per_page * ($vn_page_num - 1), 'limit' => $this->opn_items_per_page])), null, null, array());
+		$va_set_list = caExtractValuesByUserLocale($t_set->getSetsBySQL(array_merge($set_params, ['start' => $this->opn_items_per_page * ($vn_page_num - 1), 'limit' => $this->opn_items_per_page, 'sort' => $vs_sort, 'sortDirection' => $vs_sort_direction])), null, null, array());
 
 		$this->view->setVar('mode', $pn_mode);
 

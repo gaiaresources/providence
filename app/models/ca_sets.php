@@ -961,9 +961,10 @@ class ca_sets extends BundlableLabelableBaseModelWithAttributes implements IBund
 			$va_sql_selects = array('cs.set_id');
 		} else {
 			$va_sql_selects = array(
-				'cs.set_id', 'cs.set_code', 'cs.status', 'cs.access', 'cs.user_id', 'cs.table_num', 'cs.type_id', 'cs.parent_id',
+				'cs.set_id', 'cs.set_code', 'cs.status', 'cs.access', 'cs.user_id', 'cs.table_num', 'cs.type_id', 'clil.name_singular', 'cs.parent_id',
 				'csl.label_id', 'csl.name', 'csl.locale_id', 'l.language', 'l.country', 'u.fname', 'u.lname', 'u.email', 'cs.`rank`'
 			);
+			$va_extra_joins[] = "LEFT JOIN ca_list_item_labels as clil ON cs.type_id = clil.item_id";
 		}
 
 		if (isset($pa_options['all']) && $pa_options['all']) {
@@ -1104,8 +1105,11 @@ class ca_sets extends BundlableLabelableBaseModelWithAttributes implements IBund
 				".join("\n", $va_extra_joins)."
 				".(sizeof($va_sql_wheres) ? 'WHERE ' : '')."
 				".join(' AND ', $va_sql_wheres);
+			if (!empty($ps_sort)) {
+				$query .= ' ORDER BY ' . $ps_sort . ' ' . $ps_sort_direction;
+			}
 			if (!empty($pn_limit)) {
-				$query .= ' ORDER BY cs.set_id DESC LIMIT ?, ?';
+				$query .= ' LIMIT ?, ?';
 				$va_sql_params[] = $pn_start;
 				$va_sql_params[] = $pn_limit;
 			}
