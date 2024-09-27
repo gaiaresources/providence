@@ -109,17 +109,17 @@ class SetController extends ActionController {
 			switch($pn_mode) {
 				case 0:
 				default:
-					$va_set_list['access'] = __CA_SET_EDIT_ACCESS__;
+					$set_params['access'] = __CA_SET_EDIT_ACCESS__;
 					break;
 				case 1:
-					$va_set_list['allUsers'] = true;
+					$set_params['allUsers'] = true;
 					break;
 				case 2:
-					$va_set_list['publicUsers'] = true;
+					$set_params['publicUsers'] = true;
 					break;
 			}
 		} else {
-			$va_set_list['access'] = __CA_SET_EDIT_ACCESS__;
+			$set_params['access'] = __CA_SET_EDIT_ACCESS__;
 		}
 
 		$vn_num_hits = sizeof($t_set->getSets(array_merge($set_params , ['setIDsOnly' => true])));
