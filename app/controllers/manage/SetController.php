@@ -122,7 +122,7 @@ class SetController extends ActionController {
 			$set_params['access'] = __CA_SET_EDIT_ACCESS__;
 		}
 
-		$sql_sorts = array("cs.set_id", "csl.name", "clil.name_singular", "cs.access", "u.lname", "cs.access", "cs.status", "cs.rank");
+		$sql_sorts = array("cs.set_id", "csl.name", "clil.name_singular", "cs.access", "u.lname", "cs.status", "cs.rank");
 		if (!($vs_sort 	= $o_result_context->getCurrentSort()) || (!in_array($vs_sort, $sql_sorts))) {
 			$vs_sort = 'cs.set_id';
 			$vs_sort_direction = 'desc';
