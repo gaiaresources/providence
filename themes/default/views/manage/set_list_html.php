@@ -102,8 +102,11 @@ if (!$this->request->isAjax()) {
 		<thead>
 			<tr>
 				<th class="list-header-nosort"> </th>
-				<th class="list-header-nolink">
-					<?= _t('Name'); ?>
+				<th class="<?= (($vs_current_sort == "cs.set_id") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
+					<?= caNavLink($this->request, _t('Set ID'), '', 'manage', 'Set', 'ListSets', array('sort' => 'cs.set_id', 'direction' => ((($vs_current_sort == "cs.set_id") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
+				</th>
+				<th class="<?= (($vs_current_sort == "csl.name") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
+					<?= caNavLink($this->request, _t('Name'), '', 'manage', 'Set', 'ListSets', array('sort' => 'csl.name', 'direction' => ((($vs_current_sort == "csl.name") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
 				</th>
 				<th class="list-header-nolink">
 					<?= _t('Content'); ?>
@@ -111,8 +114,8 @@ if (!$this->request->isAjax()) {
 <?php
 				if(!$vn_type_id){
 ?>
-					<th class="list-header-nolink">
-						<?= _t('Type'); ?>
+					<th class="<?= (($vs_current_sort == "clil.name_singular") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
+						<?= caNavLink($this->request, _t('Type'), '', 'manage', 'Set', 'ListSets', array('sort' => 'clil.name_singular', 'direction' => ((($vs_current_sort == "clil.name_singular") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
 					</th>
 <?php
 				}
@@ -120,14 +123,14 @@ if (!$this->request->isAjax()) {
 				<th class="list-header-nolink">
 					<?= _t('# Items'); ?>
 				</th>
-				<th class="list-header-nolink">
-					<?= _t('Owner'); ?>
+				<th class="<?= (($vs_current_sort == "u.lname") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
+					<?= caNavLink($this->request, _t('Owner'), '', 'manage', 'Set', 'ListSets', array('sort' => 'u.lname', 'direction' => ((($vs_current_sort == "u.lname") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
 				</th>
-				<th class="list-header-nolink">
-					<?= _t('Access'); ?>
+				<th class="<?= (($vs_current_sort == "cs.access") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
+					<?= caNavLink($this->request, _t('Access'), '', 'manage', 'Set', 'ListSets', array('sort' => 'cs.access', 'direction' => ((($vs_current_sort == "cs.access") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
 				</th>
-				<th class="list-header-nolink">
-					<?= _t('Status'); ?>
+				<th class="<?= (($vs_current_sort == "cs.status") ? "list-header-sorted-".$vs_current_sort_direction : ""); ?> list-header-nolink">
+					<?= caNavLink($this->request, _t('Status'), '', 'manage', 'Set', 'ListSets', array('sort' => 'cs.status', 'direction' => ((($vs_current_sort == "cs.status") && ($vs_current_sort_direction != "desc")) ? "desc" : "asc"))); ?>
 				</th>
 				<th class="list-header-nolink">
 					<?= _t('Created'); ?>
@@ -143,6 +146,9 @@ if (!$this->request->isAjax()) {
 			<tr>
 				<td>
 					<input type="checkbox" class="algebraSetSelector set-table-<?= $va_set["table_num"]; ?>" name="algebra_set_id[]" data-table_num="<?= $va_set["table_num"]; ?>" value="<?= $va_set["set_id"]; ?>">
+				</td>
+				<td>
+					<div><?= $va_set['set_id']; ?></div>
 				</td>
 				<td>
 					<div class="caItemListName"><?= $va_set['name'].($va_set['set_code'] ? 

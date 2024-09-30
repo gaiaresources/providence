@@ -109,21 +109,33 @@ class SetController extends ActionController {
 			switch($pn_mode) {
 				case 0:
 				default:
-					$va_set_list['access'] = __CA_SET_EDIT_ACCESS__;
+					$set_params['access'] = __CA_SET_EDIT_ACCESS__;
 					break;
 				case 1:
-					$va_set_list['allUsers'] = true;
+					$set_params['allUsers'] = true;
 					break;
 				case 2:
-					$va_set_list['publicUsers'] = true;
+					$set_params['publicUsers'] = true;
 					break;
 			}
 		} else {
-			$va_set_list['access'] = __CA_SET_EDIT_ACCESS__;
+			$set_params['access'] = __CA_SET_EDIT_ACCESS__;
 		}
 
+		$sql_sorts = array("cs.set_id", "csl.name", "clil.name_singular", "cs.access", "u.lname", "cs.status", "cs.rank");
+		if (!($vs_sort 	= $o_result_context->getCurrentSort()) || (!in_array($vs_sort, $sql_sorts))) {
+			$vs_sort = 'cs.set_id';
+			$vs_sort_direction = 'desc';
+		} else {
+			$vs_sort_direction = $o_result_context->getCurrentSortDirection();
+		}
+		if($vb_sort_has_changed = $o_result_context->sortHasChanged()){
+			$this->opb_criteria_has_changed = true;
+		}
+		$this->view->setVar('current_sort', $vs_sort);
+		$this->view->setVar('current_sort_direction', $vs_sort_direction);
 		$vn_num_hits = sizeof($t_set->getSets(array_merge($set_params , ['setIDsOnly' => true])));
-		$va_set_list = caExtractValuesByUserLocale($t_set->getSetsBySQL(array_merge($set_params, ['start' => $this->opn_items_per_page * ($vn_page_num - 1), 'limit' => $this->opn_items_per_page])), null, null, array());
+		$va_set_list = caExtractValuesByUserLocale($t_set->getSetsBySQL(array_merge($set_params, ['start' => $this->opn_items_per_page * ($vn_page_num - 1), 'limit' => $this->opn_items_per_page, 'sort' => $vs_sort, 'sortDirection' => $vs_sort_direction])), null, null, array());
 
 		$this->view->setVar('mode', $pn_mode);
 
