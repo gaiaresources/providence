@@ -247,17 +247,22 @@ class ca_search_indexing_queue extends BaseModel {
 
 						while ($o_result->nextRow()) {
 							$o_db->query('UPDATE ca_search_indexing_queue SET started_on = ? WHERE entry_id = ?', [time(), (int)$o_result->get('entry_id')]);
+							$table_num = $o_result->get('table_num');
+							$row_id = $o_result->get('row_id');
 							if(!$o_result->get('is_unindex')) { // normal indexRow() call
+								$instance = $o_si->getTableInstance($table_num);
+								// Load a fresh instance without using the cache
+								$instance->load($table_num, false);
 								$o_si->indexRow(
-									$o_result->get('table_num'), $o_result->get('row_id'),
-									caUnserializeForDatabase($o_result->get('field_data')),
+									$table_num, $row_id,
+									$instance->getFieldValuesArray(true),
 									(bool)$o_result->get('reindex'), null,
 									caUnserializeForDatabase($o_result->get('changed_fields')),
 									array_merge(caUnserializeForDatabase($o_result->get('options')), array('queueIndexing' => false))
 								);
 							} else { // is_unindex = 1, so it's a commitRowUnindexing() call
 								$o_si->commitRowUnIndexing(
-									$o_result->get('table_num'), $o_result->get('row_id'),
+									$table_num, $row_id,
 									['queueIndexing' => false, 'dependencies' => caUnserializeForDatabase($o_result->get('dependencies'))]
 								);
 							}
