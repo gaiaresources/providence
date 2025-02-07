@@ -252,7 +252,7 @@ class ca_search_indexing_queue extends BaseModel {
 							if(!$o_result->get('is_unindex')) { // normal indexRow() call
 								$instance = $o_si->getTableInstance($table_num);
 								// Load a fresh instance without using the cache
-								$instance->load($table_num, false);
+								$instance->load($row_id, false);
 								$o_si->indexRow(
 									$table_num, $row_id,
 									$instance->getFieldValuesArray(true),
