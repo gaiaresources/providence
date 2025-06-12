@@ -425,12 +425,14 @@ class BundlableLabelableBaseModelWithAttributes extends LabelableBaseModelWithAt
 
 		$vn_primary_key = $this->getPrimaryKey();
 		SearchResult::clearResultCacheForRow($this->tableName(), $this->getPrimaryKey());
+		// Snapshot args for hooks before deleting as the values may not be accessible after delete.
+		$hook_args = array('id' => $vn_primary_key, 'table_num' => $this->tableNum(), 'table_name' => $this->tableName(), 'instance' => $this);
 
-		$this->opo_app_plugin_manager->hookBeforeBundleDelete(array('id' => $this->getPrimaryKey(), 'table_num' => $this->tableNum(), 'table_name' => $this->tableName(), 'instance' => $this));
+		$this->opo_app_plugin_manager->hookBeforeBundleDelete($hook_args);
 
 		$vn_rc = parent::delete($pb_delete_related, $pa_options, $pa_fields, $pa_table_list);
 
-		$this->opo_app_plugin_manager->hookAfterBundleDelete(array('id' => $this->getPrimaryKey(), 'table_num' => $this->tableNum(), 'table_name' => $this->tableName(), 'instance' => $this));
+		$this->opo_app_plugin_manager->hookAfterBundleDelete($hook_args);
 
 		return $vn_rc;
 	}
