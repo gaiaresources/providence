@@ -427,6 +427,7 @@ class BundlableLabelableBaseModelWithAttributes extends LabelableBaseModelWithAt
 		SearchResult::clearResultCacheForRow($this->tableName(), $this->getPrimaryKey());
 		// Snapshot args for hooks before deleting as the values may not be accessible after delete.
 		$hook_args = array('id' => $vn_primary_key, 'table_num' => $this->tableNum(), 'table_name' => $this->tableName(), 'instance' => $this);
+		$hook_args['field_values'] = $this->getFieldValuesArray();
 
 		$this->opo_app_plugin_manager->hookBeforeBundleDelete($hook_args);
 
