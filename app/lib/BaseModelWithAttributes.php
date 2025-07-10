@@ -2199,8 +2199,9 @@
 			$pa_options['format'] = $vs_format;
 			
 			if ($vs_rel_types = join(";", caGetOption('restrictToRelationshipTypes', $pa_options, array()))) { $vs_rel_types = "/{$vs_rel_types}"; }
-			
+			$count = 0;
 			foreach($va_element_set as $va_element) {
+				$count++;
 				$va_override_options = array();
 				if ($va_element['datatype'] == 0) {		// containers are not active form elements
 					unset($pa_options['name']);
@@ -2268,28 +2269,40 @@
 					$vs_form_element = caHTMLHiddenInput($vs_fld_name, array('value' =>$vs_force_value));
 				} else {
 					$vs_form_element = ca_attributes::attributeHtmlFormElement($va_element, $va_element_opts);
+					
 					//
 					// prep element for use as search element
 					//
 					// ... replace value
 					$vs_form_element = str_replace('{{'.$va_element['element_id'].'}}', $vm_values, $vs_form_element);
-				
-				
+
 					// escape any special characters in jQuery selectors
 					$f = (isset($pa_options['name']) && $pa_options['name']) ? $pa_options['name'] : $vs_fld_name;
-					
+
 					$vs_form_element = str_replace(
 						"jQuery('#{fieldNamePrefix}".$va_element['element_id']."_{n}')",
 						"jQuery('#".str_replace(array("[", "]", "."), array("\\\\[", "\\\\]", "\\\\."), $vs_fld_name)."')", 
 						$vs_form_element
 					);
-					
-					$vs_form_element = str_replace('{fieldNamePrefix}'.$va_element['element_id'].'_{n}', str_replace('.', '_',$f), $vs_form_element);
+					if ($pm_element_code_or_id === 'access_closure_period') {
+						error_log(print_r($vs_form_element, true));
+					}
+					$vs_form_element = str_replace('{fieldNamePrefix}'.$va_element['element_id'].'_{n}', str_replace('.', '_',$f . ($count > 1 ? $count: '')), $vs_form_element);
+
+					if ($pm_element_code_or_id === 'access_closure_period') {
+						error_log(print_r($vs_form_element, true));
+					}
 					$vs_form_element = str_replace('{fieldNamePrefix}'.$va_element['element_id'].'_autocomplete{n}', str_replace('.', '_',$f).'_autocomplete', $vs_form_element);
+
+					if ($pm_element_code_or_id === 'access_closure_period') {
+						error_log(print_r($vs_form_element, true));
+					}
+
 					if (caGetOption('removeTemplateNumberPlaceholders', $pa_options, true)) {
 						$vs_form_element = str_replace('{n}', '', $vs_form_element);
 					}
 					$vs_form_element = str_replace('{'. $va_element['element_id'].'}', '', $vs_form_element);
+
 				}
 				
 				$va_elements_by_container[$va_element['parent_id'] ? $va_element['parent_id'] : $va_element['element_id']][] = $vs_form_element;
