@@ -2199,7 +2199,10 @@
 			$pa_options['format'] = $vs_format;
 			
 			if ($vs_rel_types = join(";", caGetOption('restrictToRelationshipTypes', $pa_options, array()))) { $vs_rel_types = "/{$vs_rel_types}"; }
-			
+
+			if (count($va_element_set) > 1) {		// multiple elements cannot use the same name
+				unset($pa_options['name']);
+			}
 			foreach($va_element_set as $va_element) {
 				$va_override_options = array();
 				if ($va_element['datatype'] == 0) {		// containers are not active form elements
