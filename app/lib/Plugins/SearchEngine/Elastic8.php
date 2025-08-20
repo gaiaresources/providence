@@ -446,12 +446,20 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 			) {
 				$search_params['body']['sort'] = [];
 				//retry search without sort parameters
+				$this->_notifications()->addNotification(
+					_t('Search sorting: Cannot sort results by [%1]. Reverting to sorting by relevance.', $matches[1]),
+					__NOTIFICATION_TYPE_ERROR__
+				);
 				$this->postError(1710,
 					_t('Cannot sort results by [%1]. Reverting to sorting by relevance.', $matches[1]),
 					_t('Search sorting.'));
 				$this->getLogger()->logInfo(_t('Retried search with default sort'));
 				$results = $this->getClient()->search($search_params);
 			} else {
+				$this->_notifications()->addNotification(
+					_t("Querying ElasticSearch: Cannot perform search correctly and no results returned. Please consult the application error log for more information.<br><br> %1", $e->getMessage()),
+					__NOTIFICATION_TYPE_ERROR__
+				);
 				$this->postError(1710,
 					_t('Cannot perform search correctly and no results returned. Please consult the application error log for more information.',
 						$e->getMessage()), _t('Querying ElasticSearch'));
@@ -851,5 +859,30 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 		}
 
 		return $logger;
+	}
+
+	/**
+	 * @return NotificationManager|null Note this function returns null if `notify` is off in configuration
+	 */
+	private function _notifications()
+	{
+		if (!$this->opo_notifications) {
+			$this->opo_notifications = new NotificationManager($this->getRequest());
+		}
+		return $this->opo_notifications;
+	}
+
+	# -------------------------------------------------------
+	/**
+	 * Get request object for current request. Returns null if no request is available
+	 * (if, for example, the plugin is being run in a batch script - scripts don't use the request/response model)
+	 *
+	 * @return Request object or null if no request object is available
+	 */
+	public function getRequest() {
+		if (($o_app = AppController::getInstance()) && ($o_req = $o_app->getRequest())) {
+			return $o_req;
+		}
+		return null;
 	}
 }
