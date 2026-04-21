@@ -144,6 +144,13 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'replacement' => '',
 							],
 						],
+						'filter' => [
+							'punctuation_splitter' => [
+								'type' => 'word_delimiter_graph',
+								'generate_word_parts' => true,
+								'preserve_original' => true,
+							]
+						],
 						'tokenizer' => [
 							'custom_smart_tokenizer' => [
 								'type' => 'pattern',
@@ -166,6 +173,8 @@ class WLPlugSearchEngineElastic8 extends BaseSearchPlugin implements IWLPlugSear
 								'filter' => [
 									'lowercase',
 									'asciifolding',
+									'punctuation_splitter',
+									'flatten_graph'
 								],
 							],
 						],
